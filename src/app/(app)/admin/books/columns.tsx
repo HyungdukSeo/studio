@@ -123,10 +123,6 @@ export const columns = ({ onEdit, onDelete, onConfirmReturn, members }: ColumnsO
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuLabel>작업</DropdownMenuLabel>
-              <DropdownMenuItem onClick={() => navigator.clipboard.writeText(book.id)}>
-                도서 ID 복사
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
               <DropdownMenuItem onClick={() => onEdit(book)}>도서 수정</DropdownMenuItem>
               {book.status === 'borrowed' && (
                 <DropdownMenuItem onClick={() => onConfirmReturn(book)}>
@@ -138,6 +134,7 @@ export const columns = ({ onEdit, onDelete, onConfirmReturn, members }: ColumnsO
                   반납 요청
                 </DropdownMenuItem>
               )}
+              <DropdownMenuSeparator />
               <DropdownMenuItem 
                 className="text-destructive focus:bg-destructive/10 focus:text-destructive"
                 onClick={() => onDelete(book.id)}
