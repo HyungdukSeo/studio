@@ -41,7 +41,7 @@ export function useAuth() {
 
 interface BooksContextType {
     books: Book[];
-    addBook: (book: Omit<Book, 'id' | 'imageHint' | 'description' | 'status'> & { description?: string, coverImage: string }) => void;
+    addBook: (book: Omit<Book, 'id' | 'imageHint' | 'description' | 'status' | 'reservedBy'> & { description?: string, coverImage: string }) => void;
     updateBook: (book: Book) => void;
     deleteBook: (bookId: string) => void;
 }
@@ -66,25 +66,13 @@ const BooksProvider = ({ children }: { children: ReactNode }) => {
                 const storedBooks = localStorage.getItem('books_data');
                 if (storedBooks) {
                     const parsedBooks = JSON.parse(storedBooks);
-                    // Simple data migration for adding reservedBy field
-                    const migratedBooks = parsedBooks.map((book: Book) => {
-                        if (book.status === 'reserved' && !book.hasOwnProperty('reservedBy')) {
-                            return { ...book, reservedBy: null }; // Old reservation, user unknown
-                        }
-                        if (book.status !== 'reserved') {
-                            return { ...book, reservedBy: null };
-                        }
-                        return book;
-                    });
-                    setBooks(migratedBooks);
+                    setBooks(parsedBooks);
                 } else {
-                    // If no data in localStorage, initialize with mock data
                     localStorage.setItem('books_data', JSON.stringify(initialMockBooks));
                     setBooks(initialMockBooks);
                 }
             } catch (error) {
                 console.error("Failed to initialize or load books data:", error);
-                // Fallback to in-memory mock data if localStorage fails
                 setBooks(initialMockBooks);
             }
             setIsBooksInitialized(true);
@@ -101,7 +89,7 @@ const BooksProvider = ({ children }: { children: ReactNode }) => {
         }
     };
     
-    const addBook = useCallback((book: Omit<Book, 'id' | 'imageHint' | 'description' | 'status'> & { description?: string, coverImage: string }) => {
+    const addBook = useCallback((book: Omit<Book, 'id' | 'imageHint' | 'description' | 'status' | 'reservedBy'> & { description?: string, coverImage: string }) => {
         setBooks(prev => {
             const newBook: Book = {
                 ...book,
