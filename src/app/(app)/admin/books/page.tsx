@@ -14,7 +14,7 @@ import { mockMembers } from '@/lib/data';
 export default function AdminBooksPage() {
   const { user } = useAuth();
   const isAdmin = user?.role === 'admin';
-  const { books, deleteBook } = useBooks();
+  const { books, deleteBook, updateBook } = useBooks();
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingBook, setEditingBook] = useState<Book | undefined>(undefined);
 
@@ -36,10 +36,15 @@ export default function AdminBooksPage() {
   const handleDelete = (bookId: string) => {
     deleteBook(bookId);
   }
+  
+  const handleConfirmReturn = (book: Book) => {
+    updateBook({ ...book, status: 'available', reservedBy: null });
+  };
 
   const dynamicColumns = columns({ 
     onEdit: handleEdit, 
     onDelete: handleDelete,
+    onConfirmReturn: handleConfirmReturn,
     members: mockMembers,
   });
 

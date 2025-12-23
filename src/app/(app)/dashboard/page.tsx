@@ -58,10 +58,12 @@ export default function DashboardPage() {
         description: `"${book.title}" 도서 예약을 취소했습니다.`,
       });
     } else if (book.status === 'borrowed' && book.reservedBy === user.email) {
-      updateBook({ ...book, status: 'available', reservedBy: null });
+       // 일반 사용자는 직접 반납할 수 없으므로 이 부분은 동작하지 않아야 함
+       // 하지만 토스트 메시지는 남겨둠
        toast({
-        title: '반납 완료',
-        description: `"${book.title}" 도서를 반납했습니다.`,
+        variant: 'destructive',
+        title: '반납 불가',
+        description: '도서 반납은 관리자에게 문의해주세요.',
       });
     } else {
        toast({
@@ -112,7 +114,7 @@ export default function DashboardPage() {
             return { text: '예약 중', disabled: true, variant: 'outline' };
         case 'borrowed':
             if (isMyReservation) {
-                return { text: '반납하기', disabled: false, variant: 'default' };
+                return { text: '대여 중', disabled: true, variant: 'default' };
             }
             return { text: '대여 중', disabled: true, variant: 'outline' };
         case 'lost':

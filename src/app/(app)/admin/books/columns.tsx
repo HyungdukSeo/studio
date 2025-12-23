@@ -33,6 +33,7 @@ const statusStyles: Record<BookStatus, string> = {
 type ColumnsOptions = {
   onEdit: (book: Book) => void;
   onDelete: (bookId: string) => void;
+  onConfirmReturn: (book: Book) => void;
   members: Member[];
 };
 
@@ -43,7 +44,7 @@ const handleRequestReturn = (book: Book) => {
   window.location.href = `mailto:${book.reservedBy}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
 };
 
-export const columns = ({ onEdit, onDelete, members }: ColumnsOptions): ColumnDef<Book>[] => [
+export const columns = ({ onEdit, onDelete, onConfirmReturn, members }: ColumnsOptions): ColumnDef<Book>[] => [
   {
     accessorKey: 'coverImage',
     header: '이미지',
@@ -127,6 +128,11 @@ export const columns = ({ onEdit, onDelete, members }: ColumnsOptions): ColumnDe
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={() => onEdit(book)}>도서 수정</DropdownMenuItem>
+              {book.status === 'borrowed' && (
+                <DropdownMenuItem onClick={() => onConfirmReturn(book)}>
+                  반납 확인
+                </DropdownMenuItem>
+              )}
               {(book.status === 'borrowed' || book.status === 'reserved') && (
                 <DropdownMenuItem onClick={() => handleRequestReturn(book)}>
                   반납 요청
