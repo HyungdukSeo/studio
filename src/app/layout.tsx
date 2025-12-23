@@ -3,7 +3,7 @@ import { Toaster } from "@/components/ui/toaster"
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: '북브리지',
+  title: '을야지람',
   description: '현대적인 도서 대여 시스템입니다.',
 };
 

@@ -115,7 +115,7 @@ export default function LoginPage() {
           <div className="mx-auto mb-4 flex items-center justify-center">
             <BookMarked className="h-10 w-10 text-primary" />
           </div>
-          <CardTitle className="text-3xl font-headline">북브리지</CardTitle>
+          <CardTitle className="text-3xl font-headline">을야지람</CardTitle>
           <CardDescription>계정에 접근하려면 정보를 입력하세요</CardDescription>
         </CardHeader>
         <CardContent>
