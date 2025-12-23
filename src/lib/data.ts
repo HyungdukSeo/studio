@@ -38,7 +38,7 @@ const newBooks: {title: string, author: string, category: string, coverImage?: s
     { title: '최소한의 세계사', author: '임소미', category: '세계사' , coverImage: 'https://shopping-phinf.pstatic.net/main_4257500/42575007618.20230928091951.jpg' },
     { title: '최소한의 한국사', author: '최태성', category: '한국사' , coverImage: 'https://shopping-phinf.pstatic.net/main_4062250/40622504622.20230927071046.jpg' },
     { title: '미움받을 용기 1', author: '기시미 이치로', category: '심리', coverImage: 'https://shopping-phinf.pstatic.net/main_5660579/56605798802.1.jpg' },
-    { title: '미움받을 용기 2', author: '기시미 이치로', category: '심리', coverImage: 'https://shopping-phinf.pstatic.net/main_3246709/32467091853.20251130073608.jpg' },
+    { title: '미움받L을 용기 2', author: '기시미 이치로', category: '심리', coverImage: 'https://shopping-phinf.pstatic.net/main_3246709/32467091853.20251130073608.jpg' },
     { title: '일류의 조건', author: '사이토 다카', category: '자기계발' , coverImage: 'https://shopping-phinf.pstatic.net/main_4642689/46426890618.20240317071032.jpg' },
     { title: '행성1', author: '베르나르베르베르', category: '소설' , coverImage: 'https://shopping-phinf.pstatic.net/main_3247769/32477693105.20231003084705.jpg' },
     { title: '행성2', author: '베르나르베르베르', category: '소설' , coverImage: 'https://shopping-phinf.pstatic.net/main_3248281/32482814805.20230919125330.jpg' },
@@ -117,3 +117,5 @@ export const mockRentals: Rental[] = Array.from({ length: 100 }, (_, i) => {
         memberName: member.name
     };
 });
+
+    
