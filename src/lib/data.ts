@@ -114,6 +114,17 @@ export const mockRentals: Rental[] = Array.from({ length: 100 }, (_, i) => {
         returnDate.setDate(returnDate.getDate() + (14 + (i % 14)));
     }
 
+    // Assign status based on rental/return dates
+    if (returnDate) {
+        mockBooks[i % mockBooks.length].status = 'available';
+    } else {
+        if (Math.random() > 0.5) {
+            mockBooks[i % mockBooks.length].status = 'borrowed';
+        } else {
+            mockBooks[i % mockBooks.length].status = 'reserved';
+        }
+    }
+
     return {
         id: `rental-${i + 1}`,
         bookId: book.id,

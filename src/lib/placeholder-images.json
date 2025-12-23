@@ -1,239 +1,51 @@
 {
   "placeholderImages": [
-    {
-      "id": "book-1",
-      "imageUrl": "http://books.google.com/books/content?id=_k1SDwAAQBAJ&printsec=frontcover&img=1&zoom=1&edge=curl&source=gbs_api",
-      "imageHint": "book cover"
-    },
-    {
-      "id": "book-2",
-      "imageUrl": "http://books.google.com/books/content?id=9aA3zwEACAAJ&printsec=frontcover&img=1&zoom=1&source=gbs_api",
-      "imageHint": "book cover"
-    },
-    {
-      "id": "book-3",
-      "imageUrl": "http://books.google.com/books/content?id=5-NfEAAAQBAJ&printsec=frontcover&img=1&zoom=1&edge=curl&source=gbs_api",
-      "imageHint": "book cover"
-    },
-    {
-      "id": "book-4",
-      "imageUrl": "http://books.google.com/books/content?id=5-NfEAAAQBAJ&printsec=frontcover&img=1&zoom=1&edge=curl&source=gbs_api",
-      "imageHint": "book cover"
-    },
-    {
-      "id": "book-5",
-      "imageUrl": "http://books.google.com/books/content?id=T3E5EAAAQBAJ&printsec=frontcover&img=1&zoom=1&edge=curl&source=gbs_api",
-      "imageHint": "book cover"
-    },
-    {
-      "id": "book-6",
-      "imageUrl": "http://books.google.com/books/content?id=K4uSEAAAQBAJ&printsec=frontcover&img=1&zoom=1&edge=curl&source=gbs_api",
-      "imageHint": "book cover"
-    },
-    {
-      "id": "book-7",
-      "imageUrl": "http://books.google.com/books/content?id=s4g5EAAAQBAJ&printsec=frontcover&img=1&zoom=1&edge=curl&source=gbs_api",
-      "imageHint": "book cover"
-    },
-    {
-      "id": "book-8",
-      "imageUrl": "http://books.google.com/books/content?id=s4g5EAAAQBAJ&printsec=frontcover&img=1&zoom=1&edge=curl&source=gbs_api",
-      "imageHint": "book cover"
-    },
-    {
-      "id": "book-9",
-      "imageUrl": "http://books.google.com/books/content?id=J3dGEAAAQBAJ&printsec=frontcover&img=1&zoom=1&edge=curl&source=gbs_api",
-      "imageHint": "book cover"
-    },
-    {
-      "id": "book-10",
-      "imageUrl": "http://books.google.com/books/content?id=81g5EAAAQBAJ&printsec=frontcover&img=1&zoom=1&edge=curl&source=gbs_api",
-      "imageHint": "book cover"
-    },
-    {
-      "id": "book-11",
-      "imageUrl": "http://books.google.com/books/content?id=45g5EAAAQBAJ&printsec=frontcover&img=1&zoom=1&edge=curl&source=gbs_api",
-      "imageHint": "book cover"
-    },
-    {
-      "id": "book-12",
-      "imageUrl": "http://books.google.com/books/content?id=q7g5EAAAQBAJ&printsec=frontcover&img=1&zoom=1&edge=curl&source=gbs_api",
-      "imageHint": "book cover"
-    },
-    {
-      "id": "book-13",
-      "imageUrl": "http://books.google.com/books/content?id=68g5EAAAQBAJ&printsec=frontcover&img=1&zoom=1&edge=curl&source=gbs_api",
-      "imageHint": "book cover"
-    },
-    {
-      "id": "book-14",
-      "imageUrl": "http://books.google.com/books/content?id=B5g5EAAAQBAJ&printsec=frontcover&img=1&zoom=1&edge=curl&source=gbs_api",
-      "imageHint": "book cover"
-    },
-    {
-      "id": "book-15",
-      "imageUrl": "http://books.google.com/books/content?id=kK8-EAAAQBAJ&printsec=frontcover&img=1&zoom=1&edge=curl&source=gbs_api",
-      "imageHint": "book cover"
-    },
-    {
-      "id": "book-16",
-      "imageUrl": "http://books.google.com/books/content?id=kK8-EAAAQBAJ&printsec=frontcover&img=1&zoom=1&edge=curl&source=gbs_api",
-      "imageHint": "book cover"
-    },
-    {
-      "id": "book-17",
-      "imageUrl": "http://books.google.com/books/content?id=v2dCEAAAQBAJ&printsec=frontcover&img=1&zoom=1&edge=curl&source=gbs_api",
-      "imageHint": "book cover"
-    },
-    {
-      "id": "book-18",
-      "imageUrl": "http://books.google.com/books/content?id=o_FvEAAAQBAJ&printsec=frontcover&img=1&zoom=1&edge=curl&source=gbs_api",
-      "imageHint": "book cover"
-    },
-    {
-      "id": "book-19",
-      "imageUrl": "http://books.google.com/books/content?id=o_FvEAAAQBAJ&printsec=frontcover&img=1&zoom=1&edge=curl&source=gbs_api",
-      "imageHint": "book cover"
-    },
-    {
-      "id": "book-20",
-      "imageUrl": "http://books.google.com/books/content?id=i-FvEAAAQBAJ&printsec=frontcover&img=1&zoom=1&edge=curl&source=gbs_api",
-      "imageHint": "book cover"
-    },
-    {
-      "id": "book-21",
-      "imageUrl": "http://books.google.com/books/content?id=p-FvEAAAQBAJ&printsec=frontcover&img=1&zoom=1&edge=curl&source=gbs_api",
-      "imageHint": "book cover"
-    },
-    {
-      "id": "book-22",
-      "imageUrl": "http://books.google.com/books/content?id=Y-FvEAAAQBAJ&printsec=frontcover&img=1&zoom=1&edge=curl&source=gbs_api",
-      "imageHint": "book cover"
-    },
-    {
-      "id": "book-23",
-      "imageUrl": "http://books.google.com/books/content?id=z-FvEAAAQBAJ&printsec=frontcover&img=1&zoom=1&edge=curl&source=gbs_api",
-      "imageHint": "book cover"
-    },
-    {
-      "id": "book-24",
-      "imageUrl": "http://books.google.com/books/content?id=2-FvEAAAQBAJ&printsec=frontcover&img=1&zoom=1&edge=curl&source=gbs_api",
-      "imageHint": "book cover"
-    },
-    {
-      "id": "book-25",
-      "imageUrl": "http://books.google.com/books/content?id=7-FvEAAAQBAJ&printsec=frontcover&img=1&zoom=1&edge=curl&source=gbs_api",
-      "imageHint": "book cover"
-    },
-    {
-      "id": "book-26",
-      "imageUrl": "http://books.google.com/books/content?id=-_FvEAAAQBAJ&printsec=frontcover&img=1&zoom=1&edge=curl&source=gbs_api",
-      "imageHint": "book cover"
-    },
-    {
-      "id": "book-27",
-      "imageUrl": "http://books.google.com/books/content?id=A_JvEAAAQBAJ&printsec=frontcover&img=1&zoom=1&edge=curl&source=gbs_api",
-      "imageHint": "book cover"
-    },
-    {
-      "id": "book-28",
-      "imageUrl": "http://books.google.com/books/content?id=CfJvEAAAQBAJ&printsec=frontcover&img=1&zoom=1&edge=curl&source=gbs_api",
-      "imageHint": "book cover"
-    },
-    {
-      "id": "book-29",
-      "imageUrl": "http://books.google.com/books/content?id=FfJvEAAAQBAJ&printsec=frontcover&img=1&zoom=1&edge=curl&source=gbs_api",
-      "imageHint": "book cover"
-    },
-    {
-      "id": "book-30",
-      "imageUrl": "http://books.google.com/books/content?id=H_JvEAAAQBAJ&printsec=frontcover&img=1&zoom=1&edge=curl&source=gbs_api",
-      "imageHint": "book cover"
-    },
-    {
-      "id": "book-31",
-      "imageUrl": "http://books.google.com/books/content?id=H_JvEAAAQBAJ&printsec=frontcover&img=1&zoom=1&edge=curl&source=gbs_api",
-      "imageHint": "book cover"
-    },
-    {
-      "id": "book-32",
-      "imageUrl": "http://books.google.com/books/content?id=L_JvEAAAQBAJ&printsec=frontcover&img=1&zoom=1&edge=curl&source=gbs_api",
-      "imageHint": "book cover"
-    },
-    {
-      "id": "book-33",
-      "imageUrl": "http://books.google.com/books/content?id=O_JvEAAAQBAJ&printsec=frontcover&img=1&zoom=1&edge=curl&source=gbs_api",
-      "imageHint": "book cover"
-    },
-    {
-      "id": "book-34",
-      "imageUrl": "http://books.google.com/books/content?id=O_JvEAAAQBAJ&printsec=frontcover&img=1&zoom=1&edge=curl&source=gbs_api",
-      "imageHint": "book cover"
-    },
-    {
-      "id": "book-35",
-      "imageUrl": "http://books.google.com/books/content?id=S_JvEAAAQBAJ&printsec=frontcover&img=1&zoom=1&edge=curl&source=gbs_api",
-      "imageHint": "book cover"
-    },
-    {
-      "id": "book-36",
-      "imageUrl": "http://books.google.com/books/content?id=W_JvEAAAQBAJ&printsec=frontcover&img=1&zoom=1&edge=curl&source=gbs_api",
-      "imageHint": "book cover"
-    },
-    {
-      "id": "book-37",
-      "imageUrl": "http://books.google.com/books/content?id=a_JvEAAAQBAJ&printsec=frontcover&img=1&zoom=1&edge=curl&source=gbs_api",
-      "imageHint": "book cover"
-    },
-    {
-      "id": "book-38",
-      "imageUrl": "http://books.google.com/books/content?id=a_JvEAAAQBAJ&printsec=frontcover&img=1&zoom=1&edge=curl&source=gbs_api",
-      "imageHint": "book cover"
-    },
-    {
-      "id": "book-39",
-      "imageUrl": "http://books.google.com/books/content?id=e_JvEAAAQBAJ&printsec=frontcover&img=1&zoom=1&edge=curl&source=gbs_api",
-      "imageHint": "book cover"
-    },
-    {
-      "id": "book-40",
-      "imageUrl": "http://books.google.com/books/content?id=i_JvEAAAQBAJ&printsec=frontcover&img=1&zoom=1&edge=curl&source=gbs_api",
-      "imageHint": "book cover"
-    },
-    {
-      "id": "book-41",
-      "imageUrl": "http://books.google.com/books/content?id=i_JvEAAAQBAJ&printsec=frontcover&img=1&zoom=1&edge=curl&source=gbs_api",
-      "imageHint": "book cover"
-    },
-    {
-      "id": "book-42",
-      "imageUrl": "http://books.google.com/books/content?id=m_JvEAAAQBAJ&printsec=frontcover&img=1&zoom=1&edge=curl&source=gbs_api",
-      "imageHint": "book cover"
-    },
-    {
-      "id": "book-43",
-      "imageUrl": "http://books.google.com/books/content?id=q_JvEAAAQBAJ&printsec=frontcover&img=1&zoom=1&edge=curl&source=gbs_api",
-      "imageHint": "book cover"
-    },
-    {
-      "id": "book-44",
-      "imageUrl": "http://books.google.com/books/content?id=u_JvEAAAQBAJ&printsec=frontcover&img=1&zoom=1&edge=curl&source=gbs_api",
-      "imageHint": "book cover"
-    },
-    {
-      "id": "book-45",
-      "imageUrl": "http://books.google.com/books/content?id=y_JvEAAAQBAJ&printsec=frontcover&img=1&zoom=1&edge=curl&source=gbs_api",
-      "imageHint": "book cover"
-    },
-    {
-      "id": "book-46",
-      "imageUrl": "http://books.google.com/books/content?id=2_JvEAAAQBAJ&printsec=frontcover&img=1&zoom=1&edge=curl&source=gbs_api",
-      "imageHint": "book cover"
-    },
-    {
-      "id": "book-47",
-      "imageUrl": "http://books.google.com/books/content?id=7_JvEAAAQBAJ&printsec=frontcover&img=1&zoom=1&edge=curl&source=gbs_api",
-      "imageHint": "book cover"
-    }
+    {"id": "book-1", "imageUrl": "", "imageHint": "book cover"},
+    {"id": "book-2", "imageUrl": "", "imageHint": "book cover"},
+    {"id": "book-3", "imageUrl": "", "imageHint": "book cover"},
+    {"id": "book-4", "imageUrl": "", "imageHint": "book cover"},
+    {"id": "book-5", "imageUrl": "", "imageHint": "book cover"},
+    {"id": "book-6", "imageUrl": "", "imageHint": "book cover"},
+    {"id": "book-7", "imageUrl": "", "imageHint": "book cover"},
+    {"id": "book-8", "imageUrl": "", "imageHint": "book cover"},
+    {"id": "book-9", "imageUrl": "", "imageHint": "book cover"},
+    {"id": "book-10", "imageUrl": "", "imageHint": "book cover"},
+    {"id": "book-11", "imageUrl": "", "imageHint": "book cover"},
+    {"id": "book-12", "imageUrl": "", "imageHint": "book cover"},
+    {"id": "book-13", "imageUrl": "", "imageHint": "book cover"},
+    {"id": "book-14", "imageUrl": "", "imageHint": "book cover"},
+    {"id": "book-15", "imageUrl": "", "imageHint": "book cover"},
+    {"id": "book-16", "imageUrl": "", "imageHint": "book cover"},
+    {"id": "book-17", "imageUrl": "", "imageHint": "book cover"},
+    {"id": "book-18", "imageUrl": "", "imageHint": "book cover"},
+    {"id": "book-19", "imageUrl": "", "imageHint": "book cover"},
+    {"id": `book-20`, "imageUrl": "", "imageHint": "book cover"},
+    {"id": "book-21", "imageUrl": "", "imageHint": "book cover"},
+    {"id": "book-22", "imageUrl": "", "imageHint": "book cover"},
+    {"id": "book-23", "imageUrl": "", "imageHint": "book cover"},
+    {"id": "book-24", "imageUrl": "", "imageHint": "book cover"},
+    {"id": "book-25", "imageUrl": "", "imageHint": "book cover"},
+    {"id": "book-26", "imageUrl": "", "imageHint": "book cover"},
+    {"id": "book-27", "imageUrl": "", "imageHint": "book cover"},
+    {"id": "book-28", "imageUrl": "", "imageHint": "book cover"},
+    {"id": "book-29", "imageUrl": "", "imageHint": "book cover"},
+    {"id": "book-30", "imageUrl": "", "imageHint": "book cover"},
+    {"id": "book-31", "imageUrl": "", "imageHint": "book cover"},
+    {"id": "book-32", "imageUrl": "", "imageHint": "book cover"},
+    {"id": "book-33", "imageUrl": "", "imageHint": "book cover"},
+    {"id": "book-34", "imageUrl": "", "imageHint": "book cover"},
+    {"id": "book-35",imageUrl": "", "imageHint": "book cover"},
+    {"id": "book-36", "imageUrl": "", "imageHint": "book cover"},
+    {"id": "book-37", "imageUrl": "", "imageHint": "book cover"},
+    {"id": "book-38", "imageUrl": "", "imageHint": "book cover"},
+    {"id": "book-39", "imageUrl": "", "imageHint": "book cover"},
+    {"id": "book-40", "imageUrl": "", "imageHint": "book cover"},
+    {"id": "book-41", "imageUrl": "", "imageHint": "book cover"},
+    {"id": "book-42", "imageUrl": "", "imageHint": "book cover"},
+    {"id": "book-43", "imageUrl": "", "imageHint": "book cover"},
+    {"id": "book-44", "imageUrl": "", "imageHint": "book cover"},
+    {"id": "book-45", "imageUrl": "", "imageHint": "book cover"},
+    {"id": "book-46", "imageUrl": "", "imageHint": "book cover"},
+    {"id": "book-47", "imageUrl": "", "imageHint": "book cover"}
   ]
 }

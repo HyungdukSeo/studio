@@ -27,8 +27,12 @@ const statusStyles: Record<BookStatus, string> = {
   reserved: 'text-yellow-800 bg-yellow-100 border-yellow-200 dark:bg-yellow-900/50 dark:text-yellow-300 dark:border-yellow-700',
 };
 
+type ColumnsOptions = {
+  onEdit: (book: Book) => void;
+  onDelete: (bookId: string) => void;
+}
 
-export const columns: ColumnDef<Book>[] = [
+export const columns = ({ onEdit, onDelete }: ColumnsOptions): ColumnDef<Book>[] => [
   {
     accessorKey: 'title',
     header: '도서명',
@@ -76,8 +80,13 @@ export const columns: ColumnDef<Book>[] = [
                 도서 ID 복사
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem>도서 수정</DropdownMenuItem>
-              <DropdownMenuItem className="text-destructive focus:bg-destructive/10 focus:text-destructive">도서 삭제</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => onEdit(book)}>도서 수정</DropdownMenuItem>
+              <DropdownMenuItem 
+                className="text-destructive focus:bg-destructive/10 focus:text-destructive"
+                onClick={() => onDelete(book.id)}
+              >
+                도서 삭제
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>

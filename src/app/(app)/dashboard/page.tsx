@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Search } from 'lucide-react';
+import { Search, Book as BookIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '../layout';
 import { useToast } from '@/hooks/use-toast';
@@ -80,15 +80,21 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {filteredBooks.map((book) => (
           <Card key={book.id} className="flex flex-col overflow-hidden transition-shadow hover:shadow-lg">
-            <CardHeader className="p-0">
-               <Image
-                  src={book.coverImage}
-                  alt={`${book.title} 표지`}
-                  width={400}
-                  height={600}
-                  className="w-full h-48 object-cover"
-                  data-ai-hint={book.imageHint}
-                />
+            <CardHeader className="p-0 relative">
+               {book.coverImage ? (
+                 <Image
+                    src={book.coverImage}
+                    alt={`${book.title} 표지`}
+                    width={400}
+                    height={600}
+                    className="w-full h-48 object-cover"
+                    data-ai-hint={book.imageHint}
+                  />
+               ) : (
+                <div className="w-full h-48 bg-muted flex items-center justify-center">
+                  <BookIcon className="w-12 h-12 text-muted-foreground" />
+                </div>
+               )}
             </CardHeader>
             <CardContent className="flex-grow p-4">
               <CardTitle className="mb-1 text-lg font-bold font-headline leading-tight">{book.title}</CardTitle>
