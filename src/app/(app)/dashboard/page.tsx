@@ -17,27 +17,38 @@ const statusDisplay: Record<BookStatus, string> = {
   available: '대여 가능',
   borrowed: '대여 중',
   reserved: '예약 중',
+  lost: '분실',
 };
 
 const statusStyles: Record<BookStatus, string> = {
   available: 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900/50 dark:text-green-300 dark:border-green-700',
   borrowed: 'bg-red-100 text-red-800 border-red-200 dark:bg-red-900/50 dark:text-red-300 dark:border-red-700',
   reserved: 'bg-yellow-100 text-yellow-800 border-yellow-200 dark:bg-yellow-900/50 dark:text-yellow-300 dark:border-yellow-700',
+  lost: 'bg-gray-100 text-gray-800 border-gray-200 dark:bg-gray-900/50 dark:text-gray-300 dark:border-gray-700',
 };
 
 export default function DashboardPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
   const { user } = useAuth();
-  const { books } = useBooks();
+  const { books, updateBook } = useBooks();
   const { toast } = useToast();
 
-  const handleBorrow = (book: Book) => {
-    toast({
-        title: "대여 요청",
-        description: `"${book.title}" 도서 대여를 요청했습니다.`
-    })
-  }
+  const handleToggleReservation = (book: Book) => {
+    if (book.status === 'available') {
+      updateBook({ ...book, status: 'reserved' });
+      toast({
+        title: '예약 완료',
+        description: `"${book.title}" 도서를 예약했습니다.`,
+      });
+    } else if (book.status === 'reserved') {
+      updateBook({ ...book, status: 'available' });
+      toast({
+        title: '예약 취소',
+        description: `"${book.title}" 도서 예약을 취소했습니다.`,
+      });
+    }
+  };
   
   const categories = useMemo(() => ['all', ...Array.from(new Set(books.map((b) => b.category)))], [books]);
   
@@ -50,6 +61,21 @@ export default function DashboardPage() {
       return matchesSearch && matchesCategory;
     });
   }, [searchTerm, categoryFilter, books]);
+
+  const getButtonInfo = (book: Book): { text: string; disabled: boolean; variant: "outline" | "default" } => {
+    switch (book.status) {
+        case 'available':
+            return { text: '대여하기', disabled: false, variant: 'outline' };
+        case 'reserved':
+            return { text: '예약 취소', disabled: false, variant: 'default' };
+        case 'borrowed':
+            return { text: '대여 중', disabled: true, variant: 'outline' };
+        case 'lost':
+            return { text: '분실', disabled: true, variant: 'outline' };
+        default:
+            return { text: '대여하기', disabled: true, variant: 'outline' };
+    }
+  }
 
   return (
     <>
@@ -78,41 +104,44 @@ export default function DashboardPage() {
         </Select>
       </div>
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-        {filteredBooks.map((book) => (
-          <Card key={book.id} className="flex flex-col overflow-hidden transition-shadow hover:shadow-lg">
-            <CardHeader className="p-0 relative">
-               {book.coverImage ? (
-                 <Image
-                    src={book.coverImage}
-                    alt={`${book.title} 표지`}
-                    width={400}
-                    height={600}
-                    className="w-full h-48 object-cover"
-                    data-ai-hint={book.imageHint}
-                  />
-               ) : (
-                <div className="w-full h-48 bg-muted flex items-center justify-center">
-                  <BookIcon className="w-12 h-12 text-muted-foreground" />
-                </div>
-               )}
-            </CardHeader>
-            <CardContent className="flex-grow p-4">
-              <CardTitle className="mb-1 text-lg font-bold font-headline leading-tight">{book.title}</CardTitle>
-              <p className="text-sm text-muted-foreground">저자: {book.author}</p>
-            </CardContent>
-            <CardFooter className="flex justify-between items-center p-4 pt-0">
-                <Badge className={statusStyles[book.status]}>{statusDisplay[book.status]}</Badge>
-                <Button 
-                    variant="outline" 
-                    size="sm" 
-                    disabled={book.status !== 'available'}
-                    onClick={() => handleBorrow(book)}
-                >
-                  대여하기
-                </Button>
-            </CardFooter>
-          </Card>
-        ))}
+        {filteredBooks.map((book) => {
+           const buttonInfo = getButtonInfo(book);
+           return (
+            <Card key={book.id} className="flex flex-col overflow-hidden transition-shadow hover:shadow-lg">
+                <CardHeader className="p-0 relative">
+                {book.coverImage ? (
+                    <Image
+                        src={book.coverImage}
+                        alt={`${book.title} 표지`}
+                        width={400}
+                        height={600}
+                        className="w-full h-48 object-cover"
+                        data-ai-hint={book.imageHint}
+                    />
+                ) : (
+                    <div className="w-full h-48 bg-muted flex items-center justify-center">
+                    <BookIcon className="w-12 h-12 text-muted-foreground" />
+                    </div>
+                )}
+                </CardHeader>
+                <CardContent className="flex-grow p-4">
+                <CardTitle className="mb-1 text-lg font-bold font-headline leading-tight">{book.title}</CardTitle>
+                <p className="text-sm text-muted-foreground">저자: {book.author}</p>
+                </CardContent>
+                <CardFooter className="flex justify-between items-center p-4 pt-0">
+                    <Badge className={statusStyles[book.status]}>{statusDisplay[book.status]}</Badge>
+                    <Button 
+                        variant={buttonInfo.variant} 
+                        size="sm" 
+                        disabled={buttonInfo.disabled}
+                        onClick={() => handleToggleReservation(book)}
+                    >
+                        {buttonInfo.text}
+                    </Button>
+                </CardFooter>
+            </Card>
+           )
+        })}
       </div>
        {filteredBooks.length === 0 && (
           <div className="col-span-full text-center py-12 text-muted-foreground">

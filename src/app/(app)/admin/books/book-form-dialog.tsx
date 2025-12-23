@@ -15,7 +15,8 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import type { Book } from '@/lib/types';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import type { Book, BookStatus } from '@/lib/types';
 import { useBooks } from '../../layout';
 
 const bookSchema = z.object({
@@ -23,10 +24,18 @@ const bookSchema = z.object({
   author: z.string().min(1, '저자를 입력해주세요.'),
   category: z.string().min(1, '분류를 입력해주세요.'),
   coverImage: z.string().url('유효한 URL을 입력해주세요.').or(z.literal('')),
+  status: z.enum(['available', 'reserved', 'borrowed', 'lost']),
   description: z.string().optional(),
 });
 
 type BookFormValues = z.infer<typeof bookSchema>;
+
+const statusDisplay: Record<BookStatus, string> = {
+  available: '대여 가능',
+  borrowed: '대여 중',
+  reserved: '예약 중',
+  lost: '분실',
+};
 
 interface BookFormDialogProps {
   isOpen: boolean;
@@ -44,6 +53,7 @@ export function BookFormDialog({ isOpen, onOpenChange, book }: BookFormDialogPro
       author: '',
       category: '',
       coverImage: '',
+      status: 'available',
       description: '',
     },
   });
@@ -56,6 +66,7 @@ export function BookFormDialog({ isOpen, onOpenChange, book }: BookFormDialogPro
           author: book.author,
           category: book.category,
           coverImage: book.coverImage,
+          status: book.status,
           description: book.description,
         });
       } else {
@@ -64,6 +75,7 @@ export function BookFormDialog({ isOpen, onOpenChange, book }: BookFormDialogPro
           author: '',
           category: '',
           coverImage: '',
+          status: 'available',
           description: '',
         });
       }
@@ -78,7 +90,7 @@ export function BookFormDialog({ isOpen, onOpenChange, book }: BookFormDialogPro
       };
       updateBook(updatedBook);
     } else {
-      const newBook: Omit<Book, 'id' | 'status' | 'imageHint'> = {
+      const newBook: Omit<Book, 'id' | 'imageHint'> = {
         ...data,
       };
       addBook(newBook);
@@ -146,7 +158,30 @@ export function BookFormDialog({ isOpen, onOpenChange, book }: BookFormDialogPro
                 </FormItem>
               )}
             />
-            
+            <FormField
+              control={form.control}
+              name="status"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>상태</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="상태를 선택하세요" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {(Object.keys(statusDisplay) as BookStatus[]).map((status) => (
+                        <SelectItem key={status} value={status}>
+                          {statusDisplay[status]}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
             <DialogFooter>
               <DialogClose asChild>
                 <Button type="button" variant="secondary">
