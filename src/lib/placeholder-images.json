@@ -2,51 +2,238 @@
   "placeholderImages": [
     {
       "id": "book-1",
-      "description": "A classic novel cover.",
-      "imageUrl": "https://images.unsplash.com/photo-1621351183012-e2f9972dd9bf?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw4fHxib29rJTIwY292ZXJ8ZW58MHx8fHwxNzY2MzgwMjg2fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageUrl": "https://search.pstatic.net/common/?src=https%3A%2F%2Fshopping-phinf.pstatic.net%2Fmain_3244265%2F32442652877.20230327163102.jpg",
       "imageHint": "book cover"
     },
     {
       "id": "book-2",
-      "description": "A sci-fi book cover.",
-      "imageUrl": "https://images.unsplash.com/photo-1632724122599-98bff80fe9b7?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwyfHxzY2ktZmklMjBib29rfGVufDB8fHx8MTc2NjQ2MjEzOXww&ixlib=rb-4.1.0&q=80&w=1080",
-      "imageHint": "sci-fi book"
+      "imageUrl": "https://search.pstatic.net/common/?src=https%3A%2F%2Fshopping-phinf.pstatic.net%2Fmain_4749352%2F47493525624.20240424093952.jpg",
+      "imageHint": "book cover"
     },
     {
       "id": "book-3",
-      "description": "A fantasy novel cover.",
-      "imageUrl": "https://images.unsplash.com/photo-1509426361248-10e395dee572?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwyfHxmYW50YXN5JTIwYm9va3xlbnwwfHx8fDE3NjY0MjEzNTV8MA&ixlib=rb-4.1.0&q=80&w=1080",
-      "imageHint": "fantasy book"
+      "imageUrl": "https://search.pstatic.net/common/?src=https%3A%2F%2Fshopping-phinf.pstatic.net%2Fmain_3248885%2F32488851532.20220922115125.jpg",
+      "imageHint": "book cover"
     },
     {
       "id": "book-4",
-      "description": "A non-fiction book cover.",
-      "imageUrl": "https://images.unsplash.com/photo-1489421471208-251cc68284b8?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw2fHxoaXN0b3J5JTIwYm9va3xlbnwwfHx8fDE3NjY0NjIxNDB8MA&ixlib=rb-4.1.0&q=80&w=1080",
-      "imageHint": "history book"
+      "imageUrl": "https://search.pstatic.net/common/?src=https%3A%2F%2Fshopping-phinf.pstatic.net%2Fmain_3248885%2F32488851532.20220922115125.jpg",
+      "imageHint": "book cover"
     },
     {
       "id": "book-5",
-      "description": "A mystery thriller cover.",
-      "imageUrl": "https://images.unsplash.com/photo-1628024611852-c16492d6dca0?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw1fHxteXN0ZXJ5JTIwYm9va3xlbnwwfHx8fDE3NjYzNjA2Nzl8MA&ixlib=rb-4.1.0&q=80&w=1080",
-      "imageHint": "mystery book"
+      "imageUrl": "https://search.pstatic.net/common/?src=https%3A%2F%2Fshopping-phinf.pstatic.net%2Fmain_4187318%2F41873185618.20230821094833.jpg",
+      "imageHint": "book cover"
     },
     {
       "id": "book-6",
-      "description": "A romance novel cover.",
-      "imageUrl": "https://images.unsplash.com/photo-1689629300584-57aba8512692?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwzfHxyb21hbmNlJTIwYm9va3xlbnwwfHx8fDE3NjY0NjIxMzl8MA&ixlib=rb-4.1.0&q=80&w=1080",
-      "imageHint": "romance book"
+      "imageUrl": "https://search.pstatic.net/common/?src=https%3A%2F%2Fshopping-phinf.pstatic.net%2Fmain_4847306%2F48473063624.20240618080649.jpg",
+      "imageHint": "book cover"
     },
     {
       "id": "book-7",
-      "description": "A biography cover.",
-      "imageUrl": "https://images.unsplash.com/photo-1595072697075-bebc646eac35?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwzfHxiaW9ncmFwaHklMjBib29rfGVufDB8fHx8MTc2NjQyNjY0OXww&ixlib=rb-4.1.0&q=80&w=1080",
-      "imageHint": "biography book"
+      "imageUrl": "https://search.pstatic.net/common/?src=https%3A%2F%2Fshopping-phinf.pstatic.net%2Fmain_3243642%2F32436425983.20220919142750.jpg",
+      "imageHint": "book cover"
     },
     {
       "id": "book-8",
-      "description": "A children's book cover.",
-      "imageUrl": "https://images.unsplash.com/photo-1497633762265-9d179a990aa6?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw2fHxjaGlsZHJlbiUyMGJvb2t8ZW58MHx8fHwxNzY2NDYyMTM5fDA&ixlib=rb-4.1.0&q=80&w=1080",
-      "imageHint": "children book"
+      "imageUrl": "https://search.pstatic.net/common/?src=https%3A%2F%2Fshopping-phinf.pstatic.net%2Fmain_3243642%2F32436425983.20220919142750.jpg",
+      "imageHint": "book cover"
+    },
+    {
+      "id": "book-9",
+      "imageUrl": "https://search.pstatic.net/common/?src=https%3A%2F%2Fshopping-phinf.pstatic.net%2Fmain_3248882%2F32488825838.20230207153724.jpg",
+      "imageHint": "book cover"
+    },
+    {
+      "id": "book-10",
+      "imageUrl": "https://search.pstatic.net/common/?src=https%3A%2F%2Fshopping-phinf.pstatic.net%2Fmain_3243641%2F32436413296.20220919142231.jpg",
+      "imageHint": "book cover"
+    },
+    {
+      "id": "book-11",
+      "imageUrl": "https://search.pstatic.net/common/?src=https%3A%2F%2Fshopping-phinf.pstatic.net%2Fmain_4659795%2F46597956625.20240321092822.jpg",
+      "imageHint": "book cover"
+    },
+    {
+      "id": "book-12",
+      "imageUrl": "https://search.pstatic.net/common/?src=https%3A%2F%2Fshopping-phinf.pstatic.net%2Fmain_3243642%2F32436425839.20220919142745.jpg",
+      "imageHint": "book cover"
+    },
+    {
+      "id": "book-13",
+      "imageUrl": "https://search.pstatic.net/common/?src=https%3A%2F%2Fshopping-phinf.pstatic.net%2Fmain_4243171%2F42431718619.20230911090013.jpg",
+      "imageHint": "book cover"
+    },
+    {
+      "id": "book-14",
+      "imageUrl": "https://search.pstatic.net/common/?src=https%3A%2F%2Fshopping-phinf.pstatic.net%2Fmain_3248883%2F32488837494.20221124110301.jpg",
+      "imageHint": "book cover"
+    },
+    {
+      "id": "book-15",
+      "imageUrl": "https://search.pstatic.net/common/?src=https%3A%2F%2Fshopping-phinf.pstatic.net%2Fmain_3243641%2F32436412613.20220919142217.jpg",
+      "imageHint": "book cover"
+    },
+    {
+      "id": "book-16",
+      "imageUrl": "https://search.pstatic.net/common/?src=https%3A%2F%2Fshopping-phinf.pstatic.net%2Fmain_3243641%2F32436412613.20220919142217.jpg",
+      "imageHint": "book cover"
+    },
+    {
+      "id": "book-17",
+      "imageUrl": "https://search.pstatic.net/common/?src=https%3A%2F%2Fshopping-phinf.pstatic.net%2Fmain_3748227%2F37482278619.20230302102143.jpg",
+      "imageHint": "book cover"
+    },
+    {
+      "id": "book-18",
+      "imageUrl": "https://search.pstatic.net/common/?src=https%3A%2F%2Fshopping-phinf.pstatic.net%2Fmain_3243641%2F32436412612.20220919142217.jpg",
+      "imageHint": "book cover"
+    },
+    {
+      "id": "book-19",
+      "imageUrl": "https://search.pstatic.net/common/?src=https%3A%2F%2Fshopping-phinf.pstatic.net%2Fmain_3243641%2F32436412612.20220919142217.jpg",
+      "imageHint": "book cover"
+    },
+    {
+      "id": "book-20",
+      "imageUrl": "https://search.pstatic.net/common/?src=https%3A%2F%2Fshopping-phinf.pstatic.net%2Fmain_3248882%2F32488828859.20221019102434.jpg",
+      "imageHint": "book cover"
+    },
+    {
+      "id": "book-21",
+      "imageUrl": "https://search.pstatic.net/common/?src=https%3A%2F%2Fshopping-phinf.pstatic.net%2Fmain_4490800%2F44908003623.20231221093123.jpg",
+      "imageHint": "book cover"
+    },
+    {
+      "id": "book-22",
+      "imageUrl": "https://search.pstatic.net/common/?src=https%3A%2F%2Fshopping-phinf.pstatic.net%2Fmain_4600100%2F46001004624.20240222094951.jpg",
+      "imageHint": "book cover"
+    },
+    {
+      "id": "book-23",
+      "imageUrl": "https://search.pstatic.net/common/?src=https%3A%2F%2Fshopping-phinf.pstatic.net%2Fmain_3243641%2F32436412608.20220919142216.jpg",
+      "imageHint": "book cover"
+    },
+    {
+      "id": "book-24",
+      "imageUrl": "https://search.pstatic.net/common/?src=https%3A%2F%2Fshopping-phinf.pstatic.net%2Fmain_3243641%2F32436412607.20220919142216.jpg",
+      "imageHint": "book cover"
+    },
+    {
+      "id": "book-25",
+      "imageUrl": "https://search.pstatic.net/common/?src=https%3A%2F%2Fshopping-phinf.pstatic.net%2Fmain_4387877%2F43878775620.20231109094709.jpg",
+      "imageHint": "book cover"
+    },
+    {
+      "id": "book-26",
+      "imageUrl": "https://search.pstatic.net/common/?src=https%3A%2F%2Fshopping-phinf.pstatic.net%2Fmain_4466336%2F44663364624.20231211100511.jpg",
+      "imageHint": "book cover"
+    },
+    {
+      "id": "book-27",
+      "imageUrl": "https://search.pstatic.net/common/?src=https%3A%2F%2Fshopping-phinf.pstatic.net%2Fmain_3243641%2F32436412606.20220919142216.jpg",
+      "imageHint": "book cover"
+    },
+    {
+      "id": "book-28",
+      "imageUrl": "https://search.pstatic.net/common/?src=https%3A%2F%2Fshopping-phinf.pstatic.net%2Fmain_3243641%2F32436412604.20220919142216.jpg",
+      "imageHint": "book cover"
+    },
+    {
+      "id": "book-29",
+      "imageUrl": "https://search.pstatic.net/common/?src=https%3A%2F%2Fshopping-phinf.pstatic.net%2Fmain_3243641%2F32436412603.20220919142216.jpg",
+      "imageHint": "book cover"
+    },
+    {
+      "id": "book-30",
+      "imageUrl": "https://search.pstatic.net/common/?src=https%3A%2F%2Fshopping-phinf.pstatic.net%2Fmain_3243641%2F32436412602.20220919142215.jpg",
+      "imageHint": "book cover"
+    },
+    {
+      "id": "book-31",
+      "imageUrl": "https://search.pstatic.net/common/?src=https%3A%2F%2Fshopping-phinf.pstatic.net%2Fmain_3243641%2F32436412602.20220919142215.jpg",
+      "imageHint": "book cover"
+    },
+    {
+      "id": "book-32",
+      "imageUrl": "https://search.pstatic.net/common/?src=https%3A%2F%2Fshopping-phinf.pstatic.net%2Fmain_3243641%2F32436412601.20220919142215.jpg",
+      "imageHint": "book cover"
+    },
+    {
+      "id": "book-33",
+      "imageUrl": "https://search.pstatic.net/common/?src=https%3A%2F%2Fshopping-phinf.pstatic.net%2Fmain_4425667%2F44256671624.20231123101538.jpg",
+      "imageHint": "book cover"
+    },
+    {
+      "id": "book-34",
+      "imageUrl": "https://search.pstatic.net/common/?src=https%3A%2F%2Fshopping-phinf.pstatic.net%2Fmain_4425667%2F44256671624.20231123101538.jpg",
+      "imageHint": "book cover"
+    },
+    {
+      "id": "book-35",
+      "imageUrl": "https://search.pstatic.net/common/?src=https%3A%2F%2Fshopping-phinf.pstatic.net%2Fmain_4422999%2F44229990623.20231122100010.jpg",
+      "imageHint": "book cover"
+    },
+    {
+      "id": "book-36",
+      "imageUrl": "https://search.pstatic.net/common/?src=https%3A%2F%2Fshopping-phinf.pstatic.net%2Fmain_4413340%2F44133404624.20231116093855.jpg",
+      "imageHint": "book cover"
+    },
+    {
+      "id": "book-37",
+      "imageUrl": "https://search.pstatic.net/common/?src=https%3A%2F%2Fshopping-phinf.pstatic.net%2Fmain_3243641%2F32436412599.20220919142215.jpg",
+      "imageHint": "book cover"
+    },
+    {
+      "id": "book-38",
+      "imageUrl": "https://search.pstatic.net/common/?src=https%3A%2F%2Fshopping-phinf.pstatic.net%2Fmain_3243641%2F32436412599.20220919142215.jpg",
+      "imageHint": "book cover"
+    },
+    {
+      "id": "book-39",
+      "imageUrl": "https://search.pstatic.net/common/?src=https%3A%2F%2Fshopping-phinf.pstatic.net%2Fmain_3243641%2F32436412598.20220919142215.jpg",
+      "imageHint": "book cover"
+    },
+    {
+      "id": "book-40",
+      "imageUrl": "https://search.pstatic.net/common/?src=https%3A%2F%2Fshopping-phinf.pstatic.net%2Fmain_4347716%2F43477167620.20231024093952.jpg",
+      "imageHint": "book cover"
+    },
+    {
+      "id": "book-41",
+      "imageUrl": "https://search.pstatic.net/common/?src=https%3A%2F%2Fshopping-phinf.pstatic.net%2Fmain_4347716%2F43477167620.20231024093952.jpg",
+      "imageHint": "book cover"
+    },
+    {
+      "id": "book-42",
+      "imageUrl": "https://search.pstatic.net/common/?src=https%3A%2F%2Fshopping-phinf.pstatic.net%2Fmain_4044893%2F40448938618.20230601092434.jpg",
+      "imageHint": "book cover"
+    },
+    {
+      "id": "book-43",
+      "imageUrl": "https://search.pstatic.net/common/?src=https%3A%2F%2Fshopping-phinf.pstatic.net%2Fmain_4798601%2F47986011624.20240523094056.jpg",
+      "imageHint": "book cover"
+    },
+    {
+      "id": "book-44",
+      "imageUrl": "https://search.pstatic.net/common/?src=https%3A%2F%2Fshopping-phinf.pstatic.net%2Fmain_4724391%2F47243911624.20240416094254.jpg",
+      "imageHint": "book cover"
+    },
+    {
+      "id": "book-45",
+      "imageUrl": "https://search.pstatic.net/common/?src=https%3A%2F%2Fshopping-phinf.pstatic.net%2Fmain_4466336%2F44663364624.20231211100511.jpg",
+      "imageHint": "book cover"
+    },
+    {
+      "id": "book-46",
+      "imageUrl": "https://search.pstatic.net/common/?src=https%3A%2F%2Fshopping-phinf.pstatic.net%2Fmain_4413340%2F44133404624.20231116093855.jpg",
+      "imageHint": "book cover"
+    },
+    {
+      "id": "book-47",
+      "imageUrl": "https://search.pstatic.net/common/?src=https%3A%2F%2Fshopping-phinf.pstatic.net%2Fmain_3243641%2F32436412599.20220919142215.jpg",
+      "imageHint": "book cover"
     }
   ]
 }

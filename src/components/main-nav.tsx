@@ -17,7 +17,7 @@ export function MainNav({ className }: { className?: string }) {
   const isAdmin = user?.role === 'admin';
 
   const menuItems = [
-    { href: '/dashboard', label: '대시보드', icon: LayoutDashboard },
+    { href: '/dashboard', label: '도서 대출', icon: LayoutDashboard },
     { href: '/admin/books', label: '도서 관리', icon: Book },
     { href: '/admin/members', label: '회원 관리', icon: Users },
     { href: '/admin/reports', label: '리포트', icon: LineChart },
