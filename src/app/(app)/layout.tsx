@@ -61,28 +61,23 @@ const BooksProvider = ({ children }: { children: ReactNode }) => {
     const [isBooksInitialized, setIsBooksInitialized] = useState(false);
 
     useEffect(() => {
+      // This function always initializes books from the mock data source
+      // and saves it to localStorage. This ensures that any changes in
+      // `data.ts` are reflected on page load, overwriting any old data
+      // in localStorage.
+      const initializeAndStoreBooks = () => {
         try {
-            const storedBooksRaw = localStorage.getItem('books_data');
-            if (storedBooksRaw) {
-                const storedBooks = JSON.parse(storedBooksRaw);
-                // Simple check to see if the stored data structure matches the new one.
-                // If the first book doesn't have a `description` field, we assume it's old data.
-                if (storedBooks.length > 0 && storedBooks[0].description !== undefined) {
-                    setBooks(storedBooks);
-                } else {
-                    // Stored data is old, re-initialize with fresh data.
-                    setBooks(initialMockBooks);
-                    localStorage.setItem('books_data', JSON.stringify(initialMockBooks));
-                }
-            } else {
-                setBooks(initialMockBooks);
-                localStorage.setItem('books_data', JSON.stringify(initialMockBooks));
-            }
+          setBooks(initialMockBooks);
+          localStorage.setItem('books_data', JSON.stringify(initialMockBooks));
         } catch (error) {
-            console.error("Failed to access localStorage or parse books data:", error);
-            setBooks(initialMockBooks);
+          console.error("Failed to initialize or save books data:", error);
+          // Fallback to in-memory mock data if localStorage fails
+          setBooks(initialMockBooks);
         }
         setIsBooksInitialized(true);
+      };
+    
+      initializeAndStoreBooks();
     }, []);
 
     const updateLocalStorage = (newBooks: Book[]) => {
