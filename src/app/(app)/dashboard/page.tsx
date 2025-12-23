@@ -81,7 +81,7 @@ export default function DashboardPage() {
           case 'all':
             return true;
           case 'my':
-            return book.reservedBy === user?.email;
+            return (book.status === 'reserved' || book.status === 'borrowed') && book.reservedBy === user?.email;
           case 'available':
           case 'reserved':
           case 'borrowed':
