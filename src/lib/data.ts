@@ -70,11 +70,35 @@ export const mockBooks: Book[] = newBooks.map((book, i) => {
     };
 });
 
-export const mockMembers: Member[] = Array.from({ length: 20 }, (_, i) => ({
+const newMembers: { name: string; email: string }[] = [
+    { name: '권은주', email: 'ejkwon@ipageon.com' },
+    { name: '김병찬', email: 'bckim@ipageon.com' },
+    { name: '김수아', email: 'sua.kim@ipageon.com' },
+    { name: '박지희', email: 'jhpark@ipageon.com' },
+    { name: '백수연', email: 'suyeon.bae@ipageon.com' },
+    { name: '서형덕', email: 'hyungduk.seo@ipageon.com' },
+    { name: '안정호', email: 'cman@ipageon.com' },
+    { name: '원은경', email: 'ekwon@ipageon.com' },
+    { name: '유신영', email: 'shinyeong.yu@ipageon.com' },
+    { name: '이규혁', email: 'khlee@ipageon.com' },
+    { name: '이상수', email: 'sangsoo.lee@ipageon.com' },
+    { name: '이성인', email: 'silee@ipageon.com' },
+    { name: '이정로', email: 'leejr@ipageon.com' },
+    { name: '장형원', email: 'hyungwon.jang@ipageon.com' },
+    { name: '전승훈', email: 'shjeon@ipageon.com' },
+    { name: '정광희', email: 'ghjeong@ipageon.com' },
+    { name: '차의석', email: 'euisuk.cha@ipageon.com' },
+    { name: '최성호', email: 'shchoi@ipageon.com' },
+    { name: '한상욱', email: 'sangwook.han@ipageon.com' },
+    { name: '한은영', email: 'mshan@ipageon.com' },
+];
+
+export const mockMembers: Member[] = newMembers.map((member, i) => ({
     id: `member-${i + 1}`,
-    name: `회원 ${i + 1}`,
-    email: `member${i + 1}@example.com`,
+    name: member.name,
+    email: member.email,
 }));
+
 
 export const mockRentals: Rental[] = Array.from({ length: 100 }, (_, i) => {
     const book = mockBooks[i % mockBooks.length];

@@ -11,6 +11,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, BookMarked } from 'lucide-react';
+import { mockMembers } from '@/lib/data';
 
 const loginSchema = z.object({
   email: z.string().email({ message: '올바른 이메일 주소를 입력해주세요.' }),
@@ -44,7 +45,7 @@ export default function LoginPage() {
     setIsLoading(true);
     setTimeout(() => {
       const isAdmin = data.email === 'root@ipageon.com' && data.password === 'root';
-      const isMember = !isAdmin && data.email.length > 0; // Simple validation for demo
+      const isMember = mockMembers.some(member => member.email === data.email);
 
       if (isAdmin || isMember) {
         localStorage.setItem('auth_token', 'mock_user_token');
@@ -60,7 +61,7 @@ export default function LoginPage() {
         toast({
           variant: 'destructive',
           title: '로그인 실패',
-          description: '이메일 또는 비밀번호가 잘못되었습니다.',
+          description: '가입되지 않은 회원이거나 정보가 잘못되었습니다.',
         });
       }
       setIsLoading(false);
