@@ -1,51 +1,239 @@
 {
   "placeholderImages": [
-    {"id": "book-1", "imageUrl": "", "imageHint": "book cover"},
-    {"id": "book-2", "imageUrl": "", "imageHint": "book cover"},
-    {"id": "book-3", "imageUrl": "", "imageHint": "book cover"},
-    {"id": "book-4", "imageUrl": "", "imageHint": "book cover"},
-    {"id": "book-5", "imageUrl": "", "imageHint": "book cover"},
-    {"id": "book-6", "imageUrl": "", "imageHint": "book cover"},
-    {"id": "book-7", "imageUrl": "", "imageHint": "book cover"},
-    {"id": "book-8", "imageUrl": "", "imageHint": "book cover"},
-    {"id": "book-9", "imageUrl": "", "imageHint": "book cover"},
-    {"id": "book-10", "imageUrl": "", "imageHint": "book cover"},
-    {"id": "book-11", "imageUrl": "", "imageHint": "book cover"},
-    {"id": "book-12", "imageUrl": "", "imageHint": "book cover"},
-    {"id": "book-13", "imageUrl": "", "imageHint": "book cover"},
-    {"id": "book-14", "imageUrl": "", "imageHint": "book cover"},
-    {"id": "book-15", "imageUrl": "", "imageHint": "book cover"},
-    {"id": "book-16", "imageUrl": "", "imageHint": "book cover"},
-    {"id": "book-17", "imageUrl": "", "imageHint": "book cover"},
-    {"id": "book-18", "imageUrl": "", "imageHint": "book cover"},
-    {"id": "book-19", "imageUrl": "", "imageHint": "book cover"},
-    {"id": `book-20`, "imageUrl": "", "imageHint": "book cover"},
-    {"id": "book-21", "imageUrl": "", "imageHint": "book cover"},
-    {"id": "book-22", "imageUrl": "", "imageHint": "book cover"},
-    {"id": "book-23", "imageUrl": "", "imageHint": "book cover"},
-    {"id": "book-24", "imageUrl": "", "imageHint": "book cover"},
-    {"id": "book-25", "imageUrl": "", "imageHint": "book cover"},
-    {"id": "book-26", "imageUrl": "", "imageHint": "book cover"},
-    {"id": "book-27", "imageUrl": "", "imageHint": "book cover"},
-    {"id": "book-28", "imageUrl": "", "imageHint": "book cover"},
-    {"id": "book-29", "imageUrl": "", "imageHint": "book cover"},
-    {"id": "book-30", "imageUrl": "", "imageHint": "book cover"},
-    {"id": "book-31", "imageUrl": "", "imageHint": "book cover"},
-    {"id": "book-32", "imageUrl": "", "imageHint": "book cover"},
-    {"id": "book-33", "imageUrl": "", "imageHint": "book cover"},
-    {"id": "book-34", "imageUrl": "", "imageHint": "book cover"},
-    {"id": "book-35",imageUrl": "", "imageHint": "book cover"},
-    {"id": "book-36", "imageUrl": "", "imageHint": "book cover"},
-    {"id": "book-37", "imageUrl": "", "imageHint": "book cover"},
-    {"id": "book-38", "imageUrl": "", "imageHint": "book cover"},
-    {"id": "book-39", "imageUrl": "", "imageHint": "book cover"},
-    {"id": "book-40", "imageUrl": "", "imageHint": "book cover"},
-    {"id": "book-41", "imageUrl": "", "imageHint": "book cover"},
-    {"id": "book-42", "imageUrl": "", "imageHint": "book cover"},
-    {"id": "book-43", "imageUrl": "", "imageHint": "book cover"},
-    {"id": "book-44", "imageUrl": "", "imageHint": "book cover"},
-    {"id": "book-45", "imageUrl": "", "imageHint": "book cover"},
-    {"id": "book-46", "imageUrl": "", "imageHint": "book cover"},
-    {"id": "book-47", "imageUrl": "", "imageHint": "book cover"}
+    {
+      "id": "book-1",
+      "imageUrl": "",
+      "imageHint": "book cover"
+    },
+    {
+      "id": "book-2",
+      "imageUrl": "",
+      "imageHint": "book cover"
+    },
+    {
+      "id": "book-3",
+      "imageUrl": "",
+      "imageHint": "book cover"
+    },
+    {
+      "id": "book-4",
+      "imageUrl": "",
+      "imageHint": "book cover"
+    },
+    {
+      "id": "book-5",
+      "imageUrl": "",
+      "imageHint": "book cover"
+    },
+    {
+      "id": "book-6",
+      "imageUrl": "",
+      "imageHint": "book cover"
+    },
+    {
+      "id": "book-7",
+      "imageUrl": "",
+      "imageHint": "book cover"
+    },
+    {
+      "id": "book-8",
+      "imageUrl": "",
+      "imageHint": "book cover"
+    },
+    {
+      "id": "book-9",
+      "imageUrl": "",
+      "imageHint": "book cover"
+    },
+    {
+      "id": "book-10",
+      "imageUrl": "",
+      "imageHint": "book cover"
+    },
+    {
+      "id": "book-11",
+      "imageUrl": "",
+      "imageHint": "book cover"
+    },
+    {
+      "id": "book-12",
+      "imageUrl": "",
+      "imageHint": "book cover"
+    },
+    {
+      "id": "book-13",
+      "imageUrl": "",
+      "imageHint": "book cover"
+    },
+    {
+      "id": "book-14",
+      "imageUrl": "",
+      "imageHint": "book cover"
+    },
+    {
+      "id": "book-15",
+      "imageUrl": "",
+      "imageHint": "book cover"
+    },
+    {
+      "id": "book-16",
+      "imageUrl": "",
+      "imageHint": "book cover"
+    },
+    {
+      "id": "book-17",
+      "imageUrl": "",
+      "imageHint": "book cover"
+    },
+    {
+      "id": "book-18",
+      "imageUrl": "",
+      "imageHint": "book cover"
+    },
+    {
+      "id": "book-19",
+      "imageUrl": "",
+      "imageHint": "book cover"
+    },
+    {
+      "id": "book-20",
+      "imageUrl": "",
+      "imageHint": "book cover"
+    },
+    {
+      "id": "book-21",
+      "imageUrl": "",
+      "imageHint": "book cover"
+    },
+    {
+      "id": "book-22",
+      "imageUrl": "",
+      "imageHint": "book cover"
+    },
+    {
+      "id": "book-23",
+      "imageUrl": "",
+      "imageHint": "book cover"
+    },
+    {
+      "id": "book-24",
+      "imageUrl": "",
+      "imageHint": "book cover"
+    },
+    {
+      "id": "book-25",
+      "imageUrl": "",
+      "imageHint": "book cover"
+    },
+    {
+      "id": "book-26",
+      "imageUrl": "",
+      "imageHint": "book cover"
+    },
+    {
+      "id": "book-27",
+      "imageUrl": "",
+      "imageHint": "book cover"
+    },
+    {
+      "id": "book-28",
+      "imageUrl": "",
+      "imageHint": "book cover"
+    },
+    {
+      "id": "book-29",
+      "imageUrl": "",
+      "imageHint": "book cover"
+    },
+    {
+      "id": "book-30",
+      "imageUrl": "",
+      "imageHint": "book cover"
+    },
+    {
+      "id": "book-31",
+      "imageUrl": "",
+      "imageHint": "book cover"
+    },
+    {
+      "id": "book-32",
+      "imageUrl": "",
+      "imageHint": "book cover"
+    },
+    {
+      "id": "book-33",
+      "imageUrl": "",
+      "imageHint": "book cover"
+    },
+    {
+      "id": "book-34",
+      "imageUrl": "",
+      "imageHint": "book cover"
+    },
+    {
+      "id": "book-35",
+      "imageUrl": "",
+      "imageHint": "book cover"
+    },
+    {
+      "id": "book-36",
+      "imageUrl": "",
+      "imageHint": "book cover"
+    },
+    {
+      "id": "book-37",
+      "imageUrl": "",
+      "imageHint": "book cover"
+    },
+    {
+      "id": "book-38",
+      "imageUrl": "",
+      "imageHint": "book cover"
+    },
+    {
+      "id": "book-39",
+      "imageUrl": "",
+      "imageHint": "book cover"
+    },
+    {
+      "id": "book-40",
+      "imageUrl": "",
+      "imageHint": "book cover"
+    },
+    {
+      "id": "book-41",
+      "imageUrl": "",
+      "imageHint": "book cover"
+    },
+    {
+      "id": "book-42",
+      "imageUrl": "",
+      "imageHint": "book cover"
+    },
+    {
+      "id": "book-43",
+      "imageUrl": "",
+      "imageHint": "book cover"
+    },
+    {
+      "id": "book-44",
+      "imageUrl": "",
+      "imageHint": "book cover"
+    },
+    {
+      "id": "book-45",
+      "imageUrl": "",
+      "imageHint": "book cover"
+    },
+    {
+      "id": "book-46",
+      "imageUrl": "",
+      "imageHint": "book cover"
+    },
+    {
+      "id": "book-47",
+      "imageUrl": "",
+      "imageHint": "book cover"
+    }
   ]
 }
