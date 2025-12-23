@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Book, LayoutDashboard, LineChart, Users } from 'lucide-react';
+import { Book, LayoutDashboard, LineChart, Users, BookCheck } from 'lucide-react';
 import {
   SidebarMenu,
   SidebarMenuItem,
@@ -20,6 +20,7 @@ export function MainNav({ className }: { className?: string }) {
     { href: '/dashboard', label: '도서 대출', icon: LayoutDashboard },
     { href: '/admin/books', label: '도서 관리', icon: Book },
     { href: '/admin/members', label: '회원 관리', icon: Users },
+    { href: '/admin/rentals', label: '대여 현황', icon: BookCheck },
     { href: '/admin/reports', label: '리포트', icon: LineChart },
   ];
 
