@@ -13,6 +13,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Badge } from '@/components/ui/badge';
 import type { Book, BookStatus } from '@/lib/types';
+import { useAuth } from '../../layout';
 
 const statusStyles: Record<BookStatus, string> = {
   available: 'text-green-800 bg-green-100 border-green-200 dark:bg-green-900/50 dark:text-green-300 dark:border-green-700',
@@ -45,9 +46,15 @@ export const columns: ColumnDef<Book>[] = [
   },
   {
     id: 'actions',
-    cell: ({ row }) => {
+    cell: function ActionsCell({ row }) {
       const book = row.original;
+      const { user } = useAuth();
+      const isAdmin = user?.role === 'admin';
 
+      if (!isAdmin) {
+        return null;
+      }
+      
       return (
         <div className="text-right">
           <DropdownMenu>

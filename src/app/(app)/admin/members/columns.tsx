@@ -12,6 +12,8 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import type { Member } from '@/lib/types';
+import { useAuth } from '../../layout';
+
 
 export const columns: ColumnDef<Member>[] = [
   {
@@ -25,8 +27,14 @@ export const columns: ColumnDef<Member>[] = [
   },
   {
     id: 'actions',
-    cell: ({ row }) => {
+    cell: function ActionsCell({ row }) {
       const member = row.original;
+      const { user } = useAuth();
+      const isAdmin = user?.role === 'admin';
+      
+      if (!isAdmin) {
+        return null;
+      }
 
       return (
         <div className="text-right">

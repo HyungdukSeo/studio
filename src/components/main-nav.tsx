@@ -9,16 +9,21 @@ import {
   SidebarMenuButton,
 } from '@/components/ui/sidebar';
 import { cn } from '@/lib/utils';
-
-const menuItems = [
-  { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/admin/books', label: 'Books', icon: Book },
-  { href: '/admin/members', label: 'Members', icon: Users },
-  { href: '/admin/reports', label: 'Reports', icon: LineChart },
-];
+import { useAuth } from '@/app/(app)/layout';
 
 export function MainNav({ className }: { className?: string }) {
   const pathname = usePathname();
+  const { user } = useAuth();
+  const isAdmin = user?.role === 'admin';
+
+  const allMenuItems = [
+    { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, adminOnly: false },
+    { href: '/admin/books', label: 'Books', icon: Book, adminOnly: true },
+    { href: '/admin/members', label: 'Members', icon: Users, adminOnly: true },
+    { href: '/admin/reports', label: 'Reports', icon: LineChart, adminOnly: true },
+  ];
+  
+  const menuItems = allMenuItems.filter(item => !item.adminOnly || isAdmin);
 
   return (
     <nav className={cn('flex flex-col', className)}>

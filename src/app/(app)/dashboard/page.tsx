@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from 'react';
 import Image from 'next/image';
-import { mockBooks, mockRentals } from '@/lib/data';
+import { mockBooks } from '@/lib/data';
 import type { Book, BookStatus } from '@/lib/types';
 import { PageHeader } from '@/components/page-header';
 import { Input } from '@/components/ui/input';
@@ -11,6 +11,8 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/componen
 import { Badge } from '@/components/ui/badge';
 import { Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useAuth } from '../layout';
+import { useToast } from '@/hooks/use-toast';
 
 const statusStyles: Record<BookStatus, string> = {
   available: 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900/50 dark:text-green-300 dark:border-green-700',
@@ -21,6 +23,15 @@ const statusStyles: Record<BookStatus, string> = {
 export default function DashboardPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
+  const { user } = useAuth();
+  const { toast } = useToast();
+
+  const handleBorrow = (book: Book) => {
+    toast({
+        title: "Rental Request",
+        description: `Your request to borrow "${book.title}" has been submitted.`
+    })
+  }
 
   const categories = useMemo(() => ['all', ...Array.from(new Set(mockBooks.map((b) => b.category)))], []);
   
@@ -36,7 +47,7 @@ export default function DashboardPage() {
 
   return (
     <>
-      <PageHeader title="Book Collection" />
+      <PageHeader title={user?.role === 'admin' ? "Book Collection Overview" : "Book Collection"} />
       <div className="mb-6 flex flex-col gap-4 sm:flex-row">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -79,7 +90,12 @@ export default function DashboardPage() {
             </CardContent>
             <CardFooter className="flex justify-between items-center p-4 pt-0">
                 <Badge className={statusStyles[book.status]}>{book.status}</Badge>
-                <Button variant="outline" size="sm" disabled={book.status !== 'available'}>
+                <Button 
+                    variant="outline" 
+                    size="sm" 
+                    disabled={book.status !== 'available'}
+                    onClick={() => handleBorrow(book)}
+                >
                   Borrow
                 </Button>
             </CardFooter>

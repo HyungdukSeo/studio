@@ -27,7 +27,6 @@ export default function LoginPage() {
 
   useEffect(() => {
     setIsClient(true);
-    // Redirect if already logged in
     if (localStorage.getItem('auth_token')) {
       router.replace('/dashboard');
     }
@@ -43,12 +42,15 @@ export default function LoginPage() {
 
   const onSubmit = (data: LoginFormValues) => {
     setIsLoading(true);
-    // Simulate API call
     setTimeout(() => {
-      // In a real app, you'd validate credentials against a backend
-      if (data.email) {
+      const isAdmin = data.email === 'root@ipageon.com' && data.password === 'root';
+      const isMember = !isAdmin && data.email.length > 0; // Simple validation for demo
+
+      if (isAdmin || isMember) {
         localStorage.setItem('auth_token', 'mock_user_token');
         localStorage.setItem('user_email', data.email);
+        localStorage.setItem('user_role', isAdmin ? 'admin' : 'member');
+        
         toast({
           title: 'Login Successful',
           description: 'Welcome back!',
@@ -60,8 +62,8 @@ export default function LoginPage() {
           title: 'Login Failed',
           description: 'Invalid email or password.',
         });
-        setIsLoading(false);
       }
+      setIsLoading(false);
     }, 1000);
   };
 
