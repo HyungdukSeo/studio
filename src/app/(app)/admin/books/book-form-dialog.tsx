@@ -85,10 +85,11 @@ export function BookFormDialog({ isOpen, onOpenChange, book }: BookFormDialogPro
 
   const onSubmit = (data: BookFormValues) => {
     if (book) {
+      const isStatusChangingToAvailableOrLost = data.status === 'available' || data.status === 'lost';
       const updatedBook: Book = {
         ...book,
         ...data,
-        reservedBy: data.status !== 'reserved' ? null : book.reservedBy,
+        reservedBy: isStatusChangingToAvailableOrLost ? null : book.reservedBy,
       };
       updateBook(updatedBook);
     } else {
