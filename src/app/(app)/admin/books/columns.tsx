@@ -18,12 +18,14 @@ import { useAuth } from '../../layout';
 
 const statusDisplay: Record<BookStatus, string> = {
   available: '대여 가능',
+  reserved: '예약 중',
   borrowed: '대여 중',
   lost: '분실',
 };
 
 const statusStyles: Record<BookStatus, string> = {
   available: 'text-green-800 bg-green-100 border-green-200 dark:bg-green-900/50 dark:text-green-300 dark:border-green-700',
+  reserved: 'text-yellow-800 bg-yellow-100 border-yellow-200 dark:bg-yellow-900/50 dark:text-yellow-300 dark:border-yellow-700',
   borrowed: 'text-red-800 bg-red-100 border-red-200 dark:bg-red-900/50 dark:text-red-300 dark:border-red-700',
   lost: 'text-gray-800 bg-gray-100 border-gray-200 dark:bg-gray-900/50 dark:text-gray-300 dark:border-gray-700',
 };
@@ -88,7 +90,7 @@ export const columns = ({ onEdit, onDelete, members }: ColumnsOptions): ColumnDe
       const status = book.status;
       let statusText = statusDisplay[status];
       
-      if (status === 'borrowed' && book.reservedBy) {
+      if ((status === 'borrowed' || status === 'reserved') && book.reservedBy) {
           const member = members.find(m => m.email === book.reservedBy);
           if (member) {
               statusText = `${statusDisplay[status]}: ${member.name}`;
@@ -125,7 +127,7 @@ export const columns = ({ onEdit, onDelete, members }: ColumnsOptions): ColumnDe
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={() => onEdit(book)}>도서 수정</DropdownMenuItem>
-              {book.status === 'borrowed' && (
+              {(book.status === 'borrowed' || book.status === 'reserved') && (
                 <DropdownMenuItem onClick={() => handleRequestReturn(book)}>
                   반납 요청
                 </DropdownMenuItem>

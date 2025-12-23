@@ -32,6 +32,7 @@ interface DataTableProps<TData, TValue> {
 const statusDisplay: Record<BookStatus | 'all', string> = {
     all: '모든 상태',
     available: '대여 가능',
+    reserved: '예약 중',
     borrowed: '대여 중',
     lost: '분실',
   };

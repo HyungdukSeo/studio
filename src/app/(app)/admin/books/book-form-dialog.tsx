@@ -25,7 +25,7 @@ const bookSchema = z.object({
   author: z.string().min(1, '저자를 입력해주세요.'),
   category: z.string().min(1, '분류를 입력해주세요.'),
   coverImage: z.string().url('유효한 URL을 입력해주세요.').or(z.literal('')),
-  status: z.enum(['available', 'borrowed', 'lost']),
+  status: z.enum(['available', 'reserved', 'borrowed', 'lost']),
   description: z.string().optional(),
 });
 
@@ -33,6 +33,7 @@ type BookFormValues = z.infer<typeof bookSchema>;
 
 const statusDisplay: Record<BookStatus, string> = {
   available: '대여 가능',
+  reserved: '예약 중',
   borrowed: '대여 중',
   lost: '분실',
 };

@@ -15,19 +15,21 @@ import { useToast } from '@/hooks/use-toast';
 
 const statusDisplay: Record<BookStatus, string> = {
   available: '대여 가능',
+  reserved: '예약 중',
   borrowed: '대여 중',
   lost: '분실',
 };
 
 const statusFilterOptions: Record<string, string> = {
   all: '모든 상태',
-  my: '내가 대여한 도서',
+  my: '내가 대여/예약한 도서',
   available: '대여 가능',
-  borrowed: '대여 중',
+  reserved: '예약 중',
 };
 
 const statusStyles: Record<BookStatus, string> = {
   available: 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900/50 dark:text-green-300 dark:border-green-700',
+  reserved: 'bg-yellow-100 text-yellow-800 border-yellow-200 dark:bg-yellow-900/50 dark:text-yellow-300 dark:border-yellow-700',
   borrowed: 'bg-red-100 text-red-800 border-red-200 dark:bg-red-900/50 dark:text-red-300 dark:border-red-700',
   lost: 'bg-gray-100 text-gray-800 border-gray-200 dark:bg-gray-900/50 dark:text-gray-300 dark:border-gray-700',
 };
@@ -40,26 +42,32 @@ export default function DashboardPage() {
   const { books, updateBook } = useBooks();
   const { toast } = useToast();
 
-  const handleToggleBorrow = (book: Book) => {
+  const handleToggleReservation = (book: Book) => {
     if (!user || !user.email) return;
 
     if (book.status === 'available') {
-      updateBook({ ...book, status: 'borrowed', reservedBy: user.email });
+      updateBook({ ...book, status: 'reserved', reservedBy: user.email });
       toast({
-        title: '대여 완료',
-        description: `"${book.title}" 도서를 대여했습니다.`,
+        title: '예약 완료',
+        description: `"${book.title}" 도서를 예약했습니다. 관리자 승인 후 대여가 완료됩니다.`,
+      });
+    } else if (book.status === 'reserved' && book.reservedBy === user.email) {
+      updateBook({ ...book, status: 'available', reservedBy: null });
+      toast({
+        title: '예약 취소',
+        description: `"${book.title}" 도서 예약을 취소했습니다.`,
       });
     } else if (book.status === 'borrowed' && book.reservedBy === user.email) {
       updateBook({ ...book, status: 'available', reservedBy: null });
-      toast({
+       toast({
         title: '반납 완료',
         description: `"${book.title}" 도서를 반납했습니다.`,
       });
-    } else if (book.status === 'borrowed' && book.reservedBy !== user.email) {
-      toast({
+    } else {
+       toast({
         variant: 'destructive',
         title: '권한 없음',
-        description: '다른 사람이 대여한 도서는 반납할 수 없습니다.',
+        description: '다른 사람이 예약/대여한 도서는 변경할 수 없습니다.',
       });
     }
   };
@@ -78,9 +86,9 @@ export default function DashboardPage() {
           case 'all':
             return true;
           case 'my':
-            return book.status === 'borrowed' && book.reservedBy === user?.email;
+            return (book.status === 'reserved' || book.status === 'borrowed') && book.reservedBy === user?.email;
           case 'available':
-          case 'borrowed':
+          case 'reserved':
             return book.status === statusFilter;
           default:
             return true;
@@ -92,20 +100,25 @@ export default function DashboardPage() {
   }, [searchTerm, categoryFilter, statusFilter, books, user?.email]);
 
   const getButtonInfo = (book: Book): { text: string; disabled: boolean; variant: "outline" | "default" } => {
-    const isMyBorrowing = book.status === 'borrowed' && book.reservedBy === user?.email;
+    const isMyReservation = book.reservedBy === user?.email;
 
     switch (book.status) {
         case 'available':
-            return { text: '대여하기', disabled: false, variant: 'outline' };
+            return { text: '예약하기', disabled: false, variant: 'outline' };
+        case 'reserved':
+            if (isMyReservation) {
+                return { text: '예약 취소', disabled: false, variant: 'default' };
+            }
+            return { text: '예약 중', disabled: true, variant: 'outline' };
         case 'borrowed':
-            if (isMyBorrowing) {
+            if (isMyReservation) {
                 return { text: '반납하기', disabled: false, variant: 'default' };
             }
             return { text: '대여 중', disabled: true, variant: 'outline' };
         case 'lost':
             return { text: '분실', disabled: true, variant: 'outline' };
         default:
-            return { text: '대여하기', disabled: true, variant: 'outline' };
+            return { text: '상태 확인', disabled: true, variant: 'outline' };
     }
   }
 
@@ -180,7 +193,7 @@ export default function DashboardPage() {
                         variant={buttonInfo.variant} 
                         size="sm" 
                         disabled={buttonInfo.disabled}
-                        onClick={() => handleToggleBorrow(book)}
+                        onClick={() => handleToggleReservation(book)}
                     >
                         {buttonInfo.text}
                     </Button>

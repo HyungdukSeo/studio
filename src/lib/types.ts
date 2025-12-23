@@ -1,4 +1,4 @@
-export type BookStatus = 'available' | 'borrowed' | 'lost';
+export type BookStatus = 'available' | 'reserved' | 'borrowed' | 'lost';
 
 export type Book = {
   id: string;
