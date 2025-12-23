@@ -2,7 +2,7 @@ import type { Book, Member, Rental, BookStatus } from './types';
 
 const newBooks: {title: string, author: string, category: string, coverImage?: string}[] = [
     { title: '믿는 만큼 자라는 아이들', author: '박혜란', category: '자녀교육' },
-    { title: '퇴사인류 보고서', author: '김퇴사', category: '에세이' },
+    { title: '퇴사인류 보고서', author: '김퇴사', category: '에세이', coverImage: 'https://shopping-phinf.pstatic.net/main_4962228/49622282624.20240829071754.jpg' },
     { title: '다빈치 코드 1', author: '댄 브라운', category: '소설', coverImage: 'http://books.google.com/books/content?id=t1gtvQAACAAJ&printsec=frontcover&img=1&zoom=1&source=gbs_api' },
     { title: '다빈치 코드 2', author: '댄 브라운', category: '소설', coverImage: 'http://books.google.com/books/content?id=t1gtvQAACAAJ&printsec=frontcover&img=1&zoom=1&source=gbs_api' },
     { title: '마흔에 읽는 쇼펜 하우어', author: '강용수', category: '서양철학', coverImage: 'http://books.google.com/books/content?id=Q9g-EAAAQBAJ&printsec=frontcover&img=1&zoom=1&edge=curl&source=gbs_api' },
