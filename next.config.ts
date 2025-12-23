@@ -33,6 +33,12 @@ const nextConfig: NextConfig = {
         hostname: 'shopping-phinf.pstatic.net',
         port: '',
         pathname: '/**',
+      },
+      {
+        protocol: 'http',
+        hostname: 'books.google.com',
+        port: '',
+        pathname: '/**',
       }
     ],
   },
