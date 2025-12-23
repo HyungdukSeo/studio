@@ -2,7 +2,9 @@
 
 import type { ColumnDef } from '@tanstack/react-table';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import type { RentalInfo } from './page';
+import type { Book } from '@/lib/types';
 
 const statusDisplay = {
   reserved: '예약 중',
@@ -14,7 +16,11 @@ const statusStyles = {
   borrowed: 'text-red-800 bg-red-100 border-red-200 dark:bg-red-900/50 dark:text-red-300 dark:border-red-700',
 };
 
-export const columns: ColumnDef<RentalInfo>[] = [
+type ColumnsOptions = {
+  onApproveLoan: (book: Book) => void;
+};
+
+export const columns = ({ onApproveLoan }: ColumnsOptions): ColumnDef<RentalInfo>[] => [
   {
     accessorKey: 'memberName',
     header: '대여자',
@@ -41,5 +47,26 @@ export const columns: ColumnDef<RentalInfo>[] = [
   {
     accessorKey: 'dueDate',
     header: '반납 기한',
-  }
+  },
+  {
+    id: 'actions',
+    header: '관리',
+    cell: function ActionsCell({ row }) {
+      const book = row.original;
+      
+      return (
+        <div className="text-center">
+          {book.status === 'reserved' && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onApproveLoan(book)}
+            >
+              대여 승인
+            </Button>
+          )}
+        </div>
+      );
+    },
+  },
 ];

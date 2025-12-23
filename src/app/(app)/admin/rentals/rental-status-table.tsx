@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import {
   ColumnDef,
   flexRender,
@@ -30,6 +30,23 @@ interface DataTableProps<TData, TValue> {
 
 export function RentalStatusTable<TData, TValue>({ columns, data }: DataTableProps<TData, TValue>) {
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
+
+  const globalFilter = useMemo(() => {
+    const memberNameFilter = columnFilters.find(f => f.id === 'memberName');
+    return (memberNameFilter?.value as string) || '';
+  }, [columnFilters]);
+
+  const setGlobalFilter = (value: string) => {
+    setColumnFilters(prev => {
+        const otherFilters = prev.filter(f => f.id !== 'memberName' && f.id !== 'title');
+        return [
+            ...otherFilters,
+            { id: 'memberName', value },
+            { id: 'title', value }
+        ];
+    });
+  }
+
   const table = useReactTable({
     data,
     columns,
@@ -38,6 +55,13 @@ export function RentalStatusTable<TData, TValue>({ columns, data }: DataTablePro
     onColumnFiltersChange: setColumnFilters,
     getFilteredRowModel: getFilteredRowModel(),
     getSortedRowModel: getSortedRowModel(),
+    globalFilterFn: (row, columnId, filterValue) => {
+        const memberName = row.getValue('memberName') as string;
+        const title = row.getValue('title') as string;
+        return memberName.toLowerCase().includes(filterValue.toLowerCase()) || 
+               title.toLowerCase().includes(filterValue.toLowerCase());
+    },
+    onGlobalFilterChange: setGlobalFilter,
     initialState: {
         pagination: {
             pageSize: 20,
@@ -51,6 +75,7 @@ export function RentalStatusTable<TData, TValue>({ columns, data }: DataTablePro
     },
     state: {
       columnFilters,
+      globalFilter
     },
   });
 
@@ -59,12 +84,8 @@ export function RentalStatusTable<TData, TValue>({ columns, data }: DataTablePro
       <div className="flex items-center gap-4 py-4 px-4">
         <Input
           placeholder="대여자 또는 도서명으로 검색..."
-          value={(table.getColumn('memberName')?.getFilterValue() as string) ?? (table.getColumn('title')?.getFilterValue() as string) ?? ''}
-          onChange={(event) => {
-            const value = event.target.value;
-            table.getColumn('memberName')?.setFilterValue(value);
-            table.getColumn('title')?.setFilterValue(value);
-          }}
+          value={globalFilter}
+          onChange={(event) => setGlobalFilter(event.target.value)}
           className="max-w-sm"
         />
       </div>
