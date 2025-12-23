@@ -61,23 +61,25 @@ const BooksProvider = ({ children }: { children: ReactNode }) => {
     const [isBooksInitialized, setIsBooksInitialized] = useState(false);
 
     useEffect(() => {
-      // This function always initializes books from the mock data source
-      // and saves it to localStorage. This ensures that any changes in
-      // `data.ts` are reflected on page load, overwriting any old data
-      // in localStorage.
-      const initializeAndStoreBooks = () => {
-        try {
-          setBooks(initialMockBooks);
-          localStorage.setItem('books_data', JSON.stringify(initialMockBooks));
-        } catch (error) {
-          console.error("Failed to initialize or save books data:", error);
-          // Fallback to in-memory mock data if localStorage fails
-          setBooks(initialMockBooks);
-        }
-        setIsBooksInitialized(true);
-      };
-    
-      initializeAndStoreBooks();
+        const initializeBooks = () => {
+            try {
+                const storedBooks = localStorage.getItem('books_data');
+                if (storedBooks) {
+                    setBooks(JSON.parse(storedBooks));
+                } else {
+                    // If no data in localStorage, initialize with mock data
+                    localStorage.setItem('books_data', JSON.stringify(initialMockBooks));
+                    setBooks(initialMockBooks);
+                }
+            } catch (error) {
+                console.error("Failed to initialize or load books data:", error);
+                // Fallback to in-memory mock data if localStorage fails
+                setBooks(initialMockBooks);
+            }
+            setIsBooksInitialized(true);
+        };
+
+        initializeBooks();
     }, []);
 
     const updateLocalStorage = (newBooks: Book[]) => {
