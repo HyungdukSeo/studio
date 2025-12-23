@@ -16,14 +16,12 @@ export function MainNav({ className }: { className?: string }) {
   const { user } = useAuth();
   const isAdmin = user?.role === 'admin';
 
-  const allMenuItems = [
-    { href: '/dashboard', label: '대시보드', icon: LayoutDashboard, adminOnly: false },
-    { href: '/admin/books', label: '도서 관리', icon: Book, adminOnly: true },
-    { href: '/admin/members', label: '회원 관리', icon: Users, adminOnly: true },
-    { href: '/admin/reports', label: '리포트', icon: LineChart, adminOnly: true },
+  const menuItems = [
+    { href: '/dashboard', label: '대시보드', icon: LayoutDashboard },
+    { href: '/admin/books', label: '도서 관리', icon: Book },
+    { href: '/admin/members', label: '회원 관리', icon: Users },
+    { href: '/admin/reports', label: '리포트', icon: LineChart },
   ];
-  
-  const menuItems = allMenuItems.filter(item => !item.adminOnly || isAdmin);
 
   return (
     <nav className={cn('flex flex-col', className)}>
