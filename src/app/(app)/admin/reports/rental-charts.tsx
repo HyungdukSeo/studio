@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from 'recharts';
 import {
   ChartContainer,
@@ -10,7 +10,8 @@ import {
 } from '@/components/ui/chart';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { mockRentals } from '@/lib/data';
+import { mockRentals, mockMembers } from '@/lib/data';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const processData = (rentals: typeof mockRentals, period: 'monthly' | 'yearly') => {
   const dataMap = new Map<string, number>();
@@ -49,53 +50,84 @@ const chartConfig = {
 } satisfies ChartConfig;
 
 export function RentalCharts() {
-  const monthlyData = useMemo(() => processData(mockRentals, 'monthly'), []);
-  const yearlyData = useMemo(() => processData(mockRentals, 'yearly'), []);
+  const [selectedMemberId, setSelectedMemberId] = useState('all');
+
+  const filteredRentals = useMemo(() => {
+    if (selectedMemberId === 'all') {
+      return mockRentals;
+    }
+    return mockRentals.filter((rental) => rental.memberId === selectedMemberId);
+  }, [selectedMemberId]);
+  
+  const selectedMemberName = useMemo(() => {
+    if (selectedMemberId === 'all') return 'All Members';
+    return mockMembers.find(m => m.id === selectedMemberId)?.name ?? 'All Members';
+  }, [selectedMemberId]);
+
+  const monthlyData = useMemo(() => processData(filteredRentals, 'monthly'), [filteredRentals]);
+  const yearlyData = useMemo(() => processData(filteredRentals, 'yearly'), [filteredRentals]);
 
   return (
-    <Tabs defaultValue="monthly">
-      <TabsList className="mb-4">
-        <TabsTrigger value="monthly">Monthly</TabsTrigger>
-        <TabsTrigger value="yearly">Yearly</TabsTrigger>
-      </TabsList>
-      <TabsContent value="monthly">
-        <Card>
-          <CardHeader>
-            <CardTitle>Monthly Rental Volume</CardTitle>
-            <CardDescription>Number of books rented out per month over the last year.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <ChartContainer config={chartConfig} className="h-[300px] w-full">
-              <BarChart data={monthlyData} accessibilityLayer>
-                <CartesianGrid vertical={false} />
-                <XAxis dataKey="name" tickLine={false} tickMargin={10} axisLine={false} />
-                <YAxis />
-                <ChartTooltip content={<ChartTooltipContent />} />
-                <Bar dataKey="rentals" fill="var(--color-rentals)" radius={4} />
-              </BarChart>
-            </ChartContainer>
-          </CardContent>
-        </Card>
-      </TabsContent>
-      <TabsContent value="yearly">
-        <Card>
-          <CardHeader>
-            <CardTitle>Yearly Rental Volume</CardTitle>
-            <CardDescription>Total number of books rented out per year.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <ChartContainer config={chartConfig} className="h-[300px] w-full">
-              <BarChart data={yearlyData} accessibilityLayer>
-                <CartesianGrid vertical={false} />
-                <XAxis dataKey="name" tickLine={false} tickMargin={10} axisLine={false} />
-                <YAxis />
-                <ChartTooltip content={<ChartTooltipContent />} />
-                <Bar dataKey="rentals" fill="var(--color-rentals)" radius={4} />
-              </BarChart>
-            </ChartContainer>
-          </CardContent>
-        </Card>
-      </TabsContent>
-    </Tabs>
+    <>
+        <div className="mb-4 flex justify-start">
+            <Select value={selectedMemberId} onValueChange={setSelectedMemberId}>
+            <SelectTrigger className="w-full sm:w-[240px]">
+                <SelectValue placeholder="Select a member" />
+            </SelectTrigger>
+            <SelectContent>
+                <SelectItem value="all">All Members</SelectItem>
+                {mockMembers.map((member) => (
+                <SelectItem key={member.id} value={member.id}>
+                    {member.name}
+                </SelectItem>
+                ))}
+            </SelectContent>
+            </Select>
+        </div>
+        <Tabs defaultValue="monthly">
+            <TabsList className="mb-4">
+                <TabsTrigger value="monthly">Monthly</TabsTrigger>
+                <TabsTrigger value="yearly">Yearly</TabsTrigger>
+            </TabsList>
+            <TabsContent value="monthly">
+                <Card>
+                <CardHeader>
+                    <CardTitle>Monthly Rental Volume: {selectedMemberName}</CardTitle>
+                    <CardDescription>Number of books rented out per month over the last year.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <ChartContainer config={chartConfig} className="h-[300px] w-full">
+                    <BarChart data={monthlyData} accessibilityLayer>
+                        <CartesianGrid vertical={false} />
+                        <XAxis dataKey="name" tickLine={false} tickMargin={10} axisLine={false} />
+                        <YAxis />
+                        <ChartTooltip content={<ChartTooltipContent />} />
+                        <Bar dataKey="rentals" fill="var(--color-rentals)" radius={4} />
+                    </BarChart>
+                    </ChartContainer>
+                </CardContent>
+                </Card>
+            </TabsContent>
+            <TabsContent value="yearly">
+                <Card>
+                <CardHeader>
+                    <CardTitle>Yearly Rental Volume: {selectedMemberName}</CardTitle>
+                    <CardDescription>Total number of books rented out per year.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <ChartContainer config={chartConfig} className="h-[300px] w-full">
+                    <BarChart data={yearlyData} accessibilityLayer>
+                        <CartesianGrid vertical={false} />
+                        <XAxis dataKey="name" tickLine={false} tickMargin={10} axisLine={false} />
+                        <YAxis />
+                        <ChartTooltip content={<ChartTooltipContent />} />
+                        <Bar dataKey="rentals" fill="var(--color-rentals)" radius={4} />
+                    </BarChart>
+                    </ChartContainer>
+                </CardContent>
+                </Card>
+            </TabsContent>
+        </Tabs>
+    </>
   );
 }
