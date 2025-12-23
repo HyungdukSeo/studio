@@ -49,3 +49,24 @@ jobs:
           tags: |
             seohyungduk/studio:${{ github.sha }}  
 
+      - name: Build image (no push)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          push: false
+          load: true
+          tags: seohyungduk/studio:latest
+      
+      - name: Save image to tar
+        run: docker save seohyungduk/studio:latest -o studio_latest.tar
+      
+      - name: Upload tar artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: studio-image-tar
+          path: studio_latest.tar
+
+
+      
+
