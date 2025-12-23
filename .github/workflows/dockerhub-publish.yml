@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 env:
-  IMAGE_NAME: shdfree/studio
+  IMAGE_NAME: ${{ secrets.DOCKERHUB_USERNAME }}/studio
 
 jobs:
   build-and-push:
