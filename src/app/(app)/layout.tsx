@@ -41,7 +41,7 @@ export function useAuth() {
 
 interface BooksContextType {
     books: Book[];
-    addBook: (book: Omit<Book, 'id' | 'status' | 'imageHint' | 'description'> & { description?: string }) => void;
+    addBook: (book: Omit<Book, 'id' | 'imageHint' | 'description' | 'status'> & { description?: string, coverImage: string }) => void;
     updateBook: (book: Book) => void;
     deleteBook: (bookId: string) => void;
 }
@@ -93,7 +93,7 @@ const BooksProvider = ({ children }: { children: ReactNode }) => {
         }
     };
     
-    const addBook = useCallback((book: Omit<Book, 'id' | 'status' | 'imageHint' | 'description'> & { description?: string }) => {
+    const addBook = useCallback((book: Omit<Book, 'id' | 'imageHint' | 'description' | 'status'> & { description?: string, coverImage: string }) => {
         setBooks(prev => {
             const newBook: Book = {
                 ...book,

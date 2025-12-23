@@ -91,8 +91,11 @@ export function BookFormDialog({ isOpen, onOpenChange, book }: BookFormDialogPro
       };
       updateBook(updatedBook);
     } else {
-      const newBook: Omit<Book, 'id' | 'imageHint'> = {
-        ...data,
+      const newBook: Omit<Book, 'id' | 'imageHint' | 'description' | 'status'> & { description?: string, coverImage: string } = {
+        title: data.title,
+        author: data.author,
+        category: data.category,
+        coverImage: data.coverImage,
         description: data.description || '',
       };
       addBook(newBook);
