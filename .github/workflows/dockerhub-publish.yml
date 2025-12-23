@@ -14,6 +14,11 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Debug image name & tags
+        run: |
+          echo "IMAGE_NAME=${{ env.IMAGE_NAME }}"
+          echo "META_TAGS=${{ steps.meta.outputs.tags }}"
+
       - name: Checkout
         uses: actions/checkout@v4
 
