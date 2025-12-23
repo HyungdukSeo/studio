@@ -7,18 +7,13 @@ on:
   workflow_dispatch:
 
 env:
-  IMAGE_NAME: ${{ secrets.DOCKERHUB_USERNAME }}/studio
+  IMAGE_NAME: shdfree/studio
 
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Debug image name & tags
-        run: |
-          echo "IMAGE_NAME=${{ env.IMAGE_NAME }}"
-          echo "META_TAGS=${{ steps.meta.outputs.tags }}"
-
       - name: Checkout
         uses: actions/checkout@v4
 
