@@ -3,13 +3,16 @@ FROM node:20-alpine AS deps
 WORKDIR /app
 
 # package.json과 lock 파일을 복사합니다.
-COPY package.json ./
+#COPY package.json ./
 # npm 대신 다른 패키지 매니저를 사용한다면 아래 줄을 수정하세요.
 # e.g. COPY package.json yarn.lock ./
 # e.g. COPY package.json pnpm-lock.yaml ./
 
 # 의존성을 설치합니다.
-RUN npm install
+#RUN npm install
+
+COPY package.json package-lock.json ./
+RUN npm ci
 
 # 2. 빌드 (Build)
 FROM node:20-alpine AS builder
