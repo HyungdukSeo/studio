@@ -14,10 +14,9 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import type { Book } from '@/lib/types';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useBooks } from '../../layout';
 
 const bookSchema = z.object({
   title: z.string().min(1, '도서명을 입력해주세요.'),
@@ -32,11 +31,12 @@ type BookFormValues = z.infer<typeof bookSchema>;
 interface BookFormDialogProps {
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
-  onSave: (book: Book) => void;
   book?: Book;
 }
 
-export function BookFormDialog({ isOpen, onOpenChange, onSave, book }: BookFormDialogProps) {
+export function BookFormDialog({ isOpen, onOpenChange, book }: BookFormDialogProps) {
+  const { addBook, updateBook } = useBooks();
+
   const form = useForm<BookFormValues>({
     resolver: zodResolver(bookSchema),
     defaultValues: {
@@ -49,38 +49,40 @@ export function BookFormDialog({ isOpen, onOpenChange, onSave, book }: BookFormD
   });
 
   useEffect(() => {
-    if (book) {
-      form.reset({
-        title: book.title,
-        author: book.author,
-        category: book.category,
-        coverImage: book.coverImage,
-        description: book.description,
-      });
-    } else {
-      form.reset({
-        title: '',
-        author: '',
-        category: '',
-        coverImage: '',
-        description: '',
-      });
+    if (isOpen) {
+      if (book) {
+        form.reset({
+          title: book.title,
+          author: book.author,
+          category: book.category,
+          coverImage: book.coverImage,
+          description: book.description,
+        });
+      } else {
+        form.reset({
+          title: '',
+          author: '',
+          category: '',
+          coverImage: '',
+          description: '',
+        });
+      }
     }
   }, [book, form, isOpen]);
 
   const onSubmit = (data: BookFormValues) => {
-    const newBookData: Book = {
-      ...book,
-      id: book?.id || `new-${Date.now()}`,
-      title: data.title,
-      author: data.author,
-      category: data.category,
-      coverImage: data.coverImage,
-      imageHint: 'book cover',
-      description: data.description || '',
-      status: book?.status || 'available',
-    };
-    onSave(newBookData);
+    if (book) {
+      const updatedBook: Book = {
+        ...book,
+        ...data,
+      };
+      updateBook(updatedBook);
+    } else {
+      const newBook: Omit<Book, 'id' | 'status' | 'imageHint'> = {
+        ...data,
+      };
+      addBook(newBook);
+    }
     onOpenChange(false);
   };
 

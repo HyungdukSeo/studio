@@ -2,7 +2,6 @@
 
 import { useState, useMemo } from 'react';
 import Image from 'next/image';
-import { mockBooks } from '@/lib/data';
 import type { Book, BookStatus } from '@/lib/types';
 import { PageHeader } from '@/components/page-header';
 import { Input } from '@/components/ui/input';
@@ -11,7 +10,7 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/componen
 import { Badge } from '@/components/ui/badge';
 import { Search, Book as BookIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useAuth } from '../layout';
+import { useAuth, useBooks } from '../layout';
 import { useToast } from '@/hooks/use-toast';
 
 const statusDisplay: Record<BookStatus, string> = {
@@ -30,6 +29,7 @@ export default function DashboardPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
   const { user } = useAuth();
+  const { books } = useBooks();
   const { toast } = useToast();
 
   const handleBorrow = (book: Book) => {
@@ -38,18 +38,18 @@ export default function DashboardPage() {
         description: `"${book.title}" 도서 대여를 요청했습니다.`
     })
   }
-
-  const categories = useMemo(() => ['all', ...Array.from(new Set(mockBooks.map((b) => b.category)))], []);
+  
+  const categories = useMemo(() => ['all', ...Array.from(new Set(books.map((b) => b.category)))], [books]);
   
   const filteredBooks = useMemo(() => {
-    return mockBooks.filter((book) => {
+    return books.filter((book) => {
       const matchesSearch =
         book.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
         book.author.toLowerCase().includes(searchTerm.toLowerCase());
       const matchesCategory = categoryFilter === 'all' || book.category === categoryFilter;
       return matchesSearch && matchesCategory;
     });
-  }, [searchTerm, categoryFilter]);
+  }, [searchTerm, categoryFilter, books]);
 
   return (
     <>

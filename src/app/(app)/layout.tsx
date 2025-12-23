@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useEffect, useState, createContext, useContext } from 'react';
+import { useEffect, useState, createContext, useContext, useCallback, ReactNode } from 'react';
 import { Loader2 } from 'lucide-react';
 import {
   SidebarProvider,
@@ -15,6 +15,9 @@ import {
 import { UserNav } from '@/components/user-nav';
 import { MainNav } from '@/components/main-nav';
 import { Logo } from '@/components/logo';
+import { mockBooks as initialMockBooks } from '@/lib/data';
+import type { Book } from '@/lib/types';
+
 
 type UserRole = 'admin' | 'member';
 
@@ -35,6 +38,51 @@ export function useAuth() {
     }
     return context;
 }
+
+interface BooksContextType {
+    books: Book[];
+    addBook: (book: Omit<Book, 'id' | 'status' | 'imageHint'>) => void;
+    updateBook: (book: Book) => void;
+    deleteBook: (bookId: string) => void;
+}
+
+const BooksContext = createContext<BooksContextType | null>(null);
+
+export function useBooks() {
+    const context = useContext(BooksContext);
+    if (!context) {
+        throw new Error('useBooks must be used within a BooksProvider');
+    }
+    return context;
+}
+
+const BooksProvider = ({ children }: { children: ReactNode }) => {
+    const [books, setBooks] = useState<Book[]>(initialMockBooks);
+
+    const addBook = useCallback((book: Omit<Book, 'id' | 'status' | 'imageHint'>) => {
+        const newBook: Book = {
+            ...book,
+            id: `book-${Date.now()}`,
+            status: 'available',
+            imageHint: 'book cover',
+        };
+        setBooks(prev => [newBook, ...prev]);
+    }, []);
+
+    const updateBook = useCallback((updatedBook: Book) => {
+        setBooks(prev => prev.map(b => b.id === updatedBook.id ? updatedBook : b));
+    }, []);
+
+    const deleteBook = useCallback((bookId: string) => {
+        setBooks(prev => prev.filter(b => b.id !== bookId));
+    }, []);
+    
+    return (
+        <BooksContext.Provider value={{ books, addBook, updateBook, deleteBook }}>
+            {children}
+        </BooksContext.Provider>
+    );
+};
 
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
@@ -64,6 +112,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <AuthContext.Provider value={auth}>
+      <BooksProvider>
         <SidebarProvider>
           <Sidebar>
             <SidebarHeader>
@@ -90,6 +139,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             </main>
           </SidebarInset>
         </SidebarProvider>
+      </BooksProvider>
     </AuthContext.Provider>
   );
 }

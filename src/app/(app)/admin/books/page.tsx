@@ -1,31 +1,21 @@
 'use client'
 
 import { useState } from 'react';
-import { mockBooks as initialMockBooks } from '@/lib/data';
 import type { Book } from '@/lib/types';
 import { PageHeader } from '@/components/page-header';
 import { Button } from '@/components/ui/button';
 import { columns } from './columns';
 import { BooksDataTable } from './data-table';
 import { PlusCircle } from 'lucide-react';
-import { useAuth } from '../../layout';
+import { useAuth, useBooks } from '../../layout';
 import { BookFormDialog } from './book-form-dialog';
 
 export default function AdminBooksPage() {
   const { user } = useAuth();
   const isAdmin = user?.role === 'admin';
-  const [books, setBooks] = useState<Book[]>(initialMockBooks);
+  const { books, deleteBook } = useBooks();
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingBook, setEditingBook] = useState<Book | undefined>(undefined);
-
-  const handleBookSave = (savedBook: Book) => {
-    if (editingBook) {
-      setBooks(books.map(b => b.id === savedBook.id ? savedBook : b));
-    } else {
-      const newBook = { ...savedBook, id: `book-${Date.now()}`};
-      setBooks([newBook, ...books]);
-    }
-  };
 
   const handleEdit = (book: Book) => {
     setEditingBook(book);
@@ -43,7 +33,7 @@ export default function AdminBooksPage() {
   }
 
   const handleDelete = (bookId: string) => {
-    setBooks(books.filter(b => b.id !== bookId));
+    deleteBook(bookId);
   }
 
   const dynamicColumns = columns({ onEdit: handleEdit, onDelete: handleDelete });
@@ -66,7 +56,6 @@ export default function AdminBooksPage() {
       <BookFormDialog 
         isOpen={isFormOpen}
         onOpenChange={handleDialogClose}
-        onSave={handleBookSave}
         book={editingBook}
       />
     </>
