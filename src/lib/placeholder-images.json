@@ -1,3 +1,52 @@
 {
-  "placeholderImages": []
+  "placeholderImages": [
+    {
+      "id": "book-1",
+      "description": "A classic novel cover.",
+      "imageUrl": "https://images.unsplash.com/photo-1621351183012-e2f9972dd9bf?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw4fHxib29rJTIwY292ZXJ8ZW58MHx8fHwxNzY2MzgwMjg2fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "book cover"
+    },
+    {
+      "id": "book-2",
+      "description": "A sci-fi book cover.",
+      "imageUrl": "https://images.unsplash.com/photo-1632724122599-98bff80fe9b7?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwyfHxzY2ktZmklMjBib29rfGVufDB8fHx8MTc2NjQ2MjEzOXww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "sci-fi book"
+    },
+    {
+      "id": "book-3",
+      "description": "A fantasy novel cover.",
+      "imageUrl": "https://images.unsplash.com/photo-1509426361248-10e395dee572?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwyfHxmYW50YXN5JTIwYm9va3xlbnwwfHx8fDE3NjY0MjEzNTV8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "fantasy book"
+    },
+    {
+      "id": "book-4",
+      "description": "A non-fiction book cover.",
+      "imageUrl": "https://images.unsplash.com/photo-1489421471208-251cc68284b8?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw2fHxoaXN0b3J5JTIwYm9va3xlbnwwfHx8fDE3NjY0NjIxNDB8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "history book"
+    },
+    {
+      "id": "book-5",
+      "description": "A mystery thriller cover.",
+      "imageUrl": "https://images.unsplash.com/photo-1628024611852-c16492d6dca0?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw1fHxteXN0ZXJ5JTIwYm9va3xlbnwwfHx8fDE3NjYzNjA2Nzl8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "mystery book"
+    },
+    {
+      "id": "book-6",
+      "description": "A romance novel cover.",
+      "imageUrl": "https://images.unsplash.com/photo-1689629300584-57aba8512692?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwzfHxyb21hbmNlJTIwYm9va3xlbnwwfHx8fDE3NjY0NjIxMzl8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "romance book"
+    },
+    {
+      "id": "book-7",
+      "description": "A biography cover.",
+      "imageUrl": "https://images.unsplash.com/photo-1595072697075-bebc646eac35?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwzfHxiaW9ncmFwaHklMjBib29rfGVufDB8fHx8MTc2NjQyNjY0OXww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "biography book"
+    },
+    {
+      "id": "book-8",
+      "description": "A children's book cover.",
+      "imageUrl": "https://images.unsplash.com/photo-1497633762265-9d179a990aa6?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw2fHxjaGlsZHJlbiUyMGJvb2t8ZW58MHx8fHwxNzY2NDYyMTM5fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "children book"
+    }
+  ]
 }
