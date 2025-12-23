@@ -1,31 +1,78 @@
 import type { Book, Member, Rental, BookStatus } from './types';
 import { PlaceHolderImages } from './placeholder-images';
 
-const categories = ['Fiction', 'Science Fiction', 'Fantasy', 'Non-Fiction', 'Mystery', 'Romance', 'Biography', 'Children'];
-const statuses: BookStatus[] = ['available', 'borrowed', 'reserved'];
-
 const getImageForIndex = (index: number) => {
     const image = PlaceHolderImages[index % PlaceHolderImages.length];
     return { url: image.imageUrl, hint: image.imageHint };
 }
 
-export const mockBooks: Book[] = Array.from({ length: 25 }, (_, i) => {
+const newBooks: {title: string, author: string, category: string}[] = [
+    { title: '믿는 만큼 자라는 아이들', author: '박혜란', category: '자녀교육' },
+    { title: '퇴사인류 보고서', author: '김퇴사', category: '에세이' },
+    { title: '다빈치 코드 1', author: '댄 브라운', category: '소설' },
+    { title: '다빈치 코드 2', author: '댄 브라운', category: '소설' },
+    { title: '마흔에 읽는 쇼펜 하우어', author: '강용수', category: '서양철학' },
+    { title: '호의에 대하여', author: '문형배', category: '에세이' },
+    { title: '설민석의 삼국지 1', author: '설민석', category: '중국철학' },
+    { title: '설민석의 삼국지 2', author: '설민석', category: '중국철학' },
+    { title: '설민석의 조선왕조실록', author: '설민석', category: '한국사' },
+    { title: '방구석 미술관 1', author: '조원재', category: '미술' },
+    { title: '미술관에 간 할미', author: '할미', category: '미술' },
+    { title: '그리고 아무도 없었다', author: '애거서 크리스티', category: '소설' },
+    { title: '언젠가 우리가 같은 별을 바라본다면', author: '차인표', category: '소설' },
+    { title: '모순', author: '양귀자', category: '소설' },
+    { title: '시간을 파는 상점 1', author: '김선영', category: '소설' },
+    { title: '시간을 파는 상점 2', author: '김선영', category: '소설' },
+    { title: '류수영의 평생 레시피', author: '류수영', category: '요리책' },
+    { title: '불편한 편의점 1', author: '김호연', category: '소설' },
+    { title: '불편한 편의점 2', author: '김호연', category: '소설' },
+    { title: '가면산장 살인사건', author: '히가시노 게이고', category: '소설' },
+    { title: '당신이 누군가를 죽였다', author: '히가시노 게이고', category: '소설' },
+    { title: '눈에 갇힌 외딴 산장에서', author: '히가시노 게이고', category: '소설' },
+    { title: '녹나무의 여신', author: '히가시노 게이고', category: '소설' },
+    { title: '공중그네', author: '오쿠다 히데오', category: '소설' },
+    { title: '라디오체조', author: '오쿠다 히데오', category: '소설' },
+    { title: '코로나와 잠수복', author: '오쿠다 히데오', category: '소설' },
+    { title: '무코다 이발소', author: '오쿠다 히데오', category: '소설' },
+    { title: '그 많던 싱아는 누가 다 먹었을까', author: '박완서', category: '소설' },
+    { title: '그산이 정말 거기 있을까', author: '박완서', category: '소설' },
+    { title: '달러구트 꿈백화점1', author: '이미예', category: '소설' },
+    { title: '달러구트 꿈백화점2', author: '이미예', category: '소설' },
+    { title: '청춘의 독서', author: '유시민', category: '소설' },
+    { title: '사라진 근대사 100장면 1', author: '박종인', category: '소설' },
+    { title: '사라진 근대사 100장면 2', author: '박종인', category: '소설' },
+    { title: '최소한의 세계사', author: '임소미', category: '세계사' },
+    { title: '최소한의 한국사', author: '최태성', category: '한국사' },
+    { title: '미움받을 용기 1', author: '기시미 이치로', category: '심리' },
+    { title: '미움받을 용기 2', author: '기시미 이치로', category: '심리' },
+    { title: '일류의 조건', author: '사이토 다카', category: '자기계발' },
+    { title: '행성1', author: '베르나르베르베르', category: '소설' },
+    { title: '행성2', author: '베르나르베르베르', category: '소설' },
+    { title: '이어령의 마지막수업', author: '김지수', category: '인문교양' },
+    { title: '2025 젋은작가상 수상 작품집', author: '벡온유외6명', category: '소설' },
+    { title: '나는 하루 5분만 바꾸기로 했다', author: '옥민송', category: '자기계발' },
+    { title: '나를 소모하지 않는 현명한 태도에 관하여', author: '마티아스 뇔케', category: '자기계발' },
+    { title: '우리는 모두 죽는 다는 것을 기억하라', author: '웨인다이어', category: '자기계발' },
+    { title: '데미안', author: '헤르만 헤세', category: '소설' },
+];
+
+export const mockBooks: Book[] = newBooks.map((book, i) => {
     const { url, hint } = getImageForIndex(i);
     return {
         id: `book-${i + 1}`,
-        title: `The Great Novel Vol. ${i + 1}`,
-        author: `Author ${i + 1}`,
-        category: categories[i % categories.length],
-        description: `A captivating story in the world of ${categories[i % categories.length]}. This is volume ${i + 1} in a long-running series of epic tales.`,
+        title: book.title,
+        author: book.author,
+        category: book.category,
+        description: `"${book.title}"은(는) ${book.author} 작가의 ${book.category} 장르 책입니다.`,
         coverImage: url,
         imageHint: hint,
-        status: statuses[i % statuses.length],
+        status: 'available',
     };
 });
 
 export const mockMembers: Member[] = Array.from({ length: 20 }, (_, i) => ({
     id: `member-${i + 1}`,
-    name: `Member ${i + 1}`,
+    name: `회원 ${i + 1}`,
     email: `member${i + 1}@example.com`,
 }));
 

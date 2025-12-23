@@ -14,11 +14,11 @@ export default function AdminBooksPage() {
 
   return (
     <>
-      <PageHeader title="Manage Books">
+      <PageHeader title="도서 관리">
         {isAdmin && (
             <Button>
                 <PlusCircle className="mr-2 h-4 w-4" />
-                Add New Book
+                새 도서 추가
             </Button>
         )}
       </PageHeader>

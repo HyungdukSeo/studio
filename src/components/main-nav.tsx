@@ -17,10 +17,10 @@ export function MainNav({ className }: { className?: string }) {
   const isAdmin = user?.role === 'admin';
 
   const allMenuItems = [
-    { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, adminOnly: false },
-    { href: '/admin/books', label: 'Books', icon: Book, adminOnly: true },
-    { href: '/admin/members', label: 'Members', icon: Users, adminOnly: true },
-    { href: '/admin/reports', label: 'Reports', icon: LineChart, adminOnly: true },
+    { href: '/dashboard', label: '대시보드', icon: LayoutDashboard, adminOnly: false },
+    { href: '/admin/books', label: '도서 관리', icon: Book, adminOnly: true },
+    { href: '/admin/members', label: '회원 관리', icon: Users, adminOnly: true },
+    { href: '/admin/reports', label: '리포트', icon: LineChart, adminOnly: true },
   ];
   
   const menuItems = allMenuItems.filter(item => !item.adminOnly || isAdmin);

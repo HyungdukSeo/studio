@@ -18,12 +18,12 @@ import { useAuth } from '../../layout';
 export const columns: ColumnDef<Member>[] = [
   {
     accessorKey: 'name',
-    header: 'Name',
+    header: '이름',
     cell: ({ row }) => <div className="font-medium">{row.getValue('name')}</div>,
   },
   {
     accessorKey: 'email',
-    header: 'Email',
+    header: '이메일',
   },
   {
     id: 'actions',
@@ -41,18 +41,18 @@ export const columns: ColumnDef<Member>[] = [
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="h-8 w-8 p-0">
-                <span className="sr-only">Open menu</span>
+                <span className="sr-only">메뉴 열기</span>
                 <MoreHorizontal className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuLabel>Actions</DropdownMenuLabel>
+              <DropdownMenuLabel>작업</DropdownMenuLabel>
               <DropdownMenuItem onClick={() => navigator.clipboard.writeText(member.id)}>
-                Copy Member ID
+                회원 ID 복사
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem>Edit Member</DropdownMenuItem>
-              <DropdownMenuItem className="text-destructive focus:bg-destructive/10 focus:text-destructive">Delete Member</DropdownMenuItem>
+              <DropdownMenuItem>회원 수정</DropdownMenuItem>
+              <DropdownMenuItem className="text-destructive focus:bg-destructive/10 focus:text-destructive">회원 삭제</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>

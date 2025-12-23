@@ -31,8 +31,8 @@ export function UserNav() {
   const handleChangePassword = () => {
     // This is a placeholder for a real password change modal/page
     toast({
-        title: "Feature coming soon!",
-        description: "The ability to change passwords is not yet implemented.",
+        title: "출시 예정 기능",
+        description: "비밀번호 변경 기능은 아직 구현되지 않았습니다.",
     });
   };
 
@@ -44,7 +44,7 @@ export function UserNav() {
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" className="relative h-8 w-8 rounded-full">
           <Avatar className="h-9 w-9">
-            <AvatarImage src="/avatars/01.png" alt="User avatar" />
+            <AvatarImage src="/avatars/01.png" alt="사용자 아바타" />
             <AvatarFallback>{userInitial}</AvatarFallback>
           </Avatar>
         </Button>
@@ -52,7 +52,7 @@ export function UserNav() {
       <DropdownMenuContent className="w-56" align="end" forceMount>
         <DropdownMenuLabel className="font-normal">
           <div className="flex flex-col space-y-1">
-            <p className="text-sm font-medium leading-none">Signed in as</p>
+            <p className="text-sm font-medium leading-none">로그인 계정</p>
             <p className="text-xs leading-none text-muted-foreground truncate">{user?.email}</p>
           </div>
         </DropdownMenuLabel>
@@ -60,19 +60,19 @@ export function UserNav() {
         <DropdownMenuGroup>
           <DropdownMenuItem disabled>
             <User className="mr-2 h-4 w-4" />
-            <span>Profile</span>
+            <span>프로필</span>
           </DropdownMenuItem>
            {isAdmin && (
             <DropdownMenuItem onClick={handleChangePassword}>
                 <Lock className="mr-2 h-4 w-4" />
-                <span>Change Password</span>
+                <span>비밀번호 변경</span>
             </DropdownMenuItem>
            )}
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={handleLogout}>
           <LogOut className="mr-2 h-4 w-4" />
-          <span>Log out</span>
+          <span>로그아웃</span>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

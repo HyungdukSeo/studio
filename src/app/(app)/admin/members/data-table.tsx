@@ -45,7 +45,7 @@ export function MembersDataTable<TData, TValue>({ columns, data }: DataTableProp
     <div>
       <div className="flex items-center py-4">
         <Input
-          placeholder="Filter by name..."
+          placeholder="이름으로 검색..."
           value={(table.getColumn('name')?.getFilterValue() as string) ?? ''}
           onChange={(event) => table.getColumn('name')?.setFilterValue(event.target.value)}
           className="max-w-sm"
@@ -82,7 +82,7 @@ export function MembersDataTable<TData, TValue>({ columns, data }: DataTableProp
             ) : (
               <TableRow>
                 <TableCell colSpan={columns.length} className="h-24 text-center">
-                  No results.
+                  결과가 없습니다.
                 </TableCell>
               </TableRow>
             )}
@@ -96,7 +96,7 @@ export function MembersDataTable<TData, TValue>({ columns, data }: DataTableProp
           onClick={() => table.previousPage()}
           disabled={!table.getCanPreviousPage()}
         >
-          Previous
+          이전
         </Button>
         <Button
           variant="outline"
@@ -104,7 +104,7 @@ export function MembersDataTable<TData, TValue>({ columns, data }: DataTableProp
           onClick={() => table.nextPage()}
           disabled={!table.getCanNextPage()}
         >
-          Next
+          다음
         </Button>
       </div>
     </div>

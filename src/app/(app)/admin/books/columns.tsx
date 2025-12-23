@@ -15,6 +15,12 @@ import { Badge } from '@/components/ui/badge';
 import type { Book, BookStatus } from '@/lib/types';
 import { useAuth } from '../../layout';
 
+const statusDisplay: Record<BookStatus, string> = {
+  available: '대여 가능',
+  borrowed: '대여 중',
+  reserved: '예약 중',
+};
+
 const statusStyles: Record<BookStatus, string> = {
   available: 'text-green-800 bg-green-100 border-green-200 dark:bg-green-900/50 dark:text-green-300 dark:border-green-700',
   borrowed: 'text-red-800 bg-red-100 border-red-200 dark:bg-red-900/50 dark:text-red-300 dark:border-red-700',
@@ -25,23 +31,23 @@ const statusStyles: Record<BookStatus, string> = {
 export const columns: ColumnDef<Book>[] = [
   {
     accessorKey: 'title',
-    header: 'Title',
+    header: '도서명',
     cell: ({ row }) => <div className="font-medium">{row.getValue('title')}</div>,
   },
   {
     accessorKey: 'author',
-    header: 'Author',
+    header: '저자',
   },
   {
     accessorKey: 'category',
-    header: 'Category',
+    header: '분류',
   },
   {
     accessorKey: 'status',
-    header: 'Status',
+    header: '상태',
     cell: ({ row }) => {
       const status = row.getValue('status') as BookStatus;
-      return <Badge className={statusStyles[status]}>{status}</Badge>;
+      return <Badge className={statusStyles[status]}>{statusDisplay[status]}</Badge>;
     },
   },
   {
@@ -60,18 +66,18 @@ export const columns: ColumnDef<Book>[] = [
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="h-8 w-8 p-0">
-                <span className="sr-only">Open menu</span>
+                <span className="sr-only">메뉴 열기</span>
                 <MoreHorizontal className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuLabel>Actions</DropdownMenuLabel>
+              <DropdownMenuLabel>작업</DropdownMenuLabel>
               <DropdownMenuItem onClick={() => navigator.clipboard.writeText(book.id)}>
-                Copy Book ID
+                도서 ID 복사
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem>Edit Book</DropdownMenuItem>
-              <DropdownMenuItem className="text-destructive focus:bg-destructive/10 focus:text-destructive">Delete Book</DropdownMenuItem>
+              <DropdownMenuItem>도서 수정</DropdownMenuItem>
+              <DropdownMenuItem className="text-destructive focus:bg-destructive/10 focus:text-destructive">도서 삭제</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>

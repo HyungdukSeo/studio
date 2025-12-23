@@ -4,7 +4,7 @@ import { RentalCharts } from './rental-charts';
 export default function AdminReportsPage() {
   return (
     <>
-      <PageHeader title="Rental Reports" />
+      <PageHeader title="대여 리포트" />
       <RentalCharts />
     </>
   );

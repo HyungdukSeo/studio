@@ -44,7 +44,7 @@ const processData = (rentals: typeof mockRentals, period: 'monthly' | 'yearly') 
 
 const chartConfig = {
   rentals: {
-    label: 'Rentals',
+    label: '대여',
     color: 'hsl(var(--primary))',
   },
 } satisfies ChartConfig;
@@ -60,8 +60,8 @@ export function RentalCharts() {
   }, [selectedMemberId]);
   
   const selectedMemberName = useMemo(() => {
-    if (selectedMemberId === 'all') return 'All Members';
-    return mockMembers.find(m => m.id === selectedMemberId)?.name ?? 'All Members';
+    if (selectedMemberId === 'all') return '전체 회원';
+    return mockMembers.find(m => m.id === selectedMemberId)?.name ?? '전체 회원';
   }, [selectedMemberId]);
 
   const monthlyData = useMemo(() => processData(filteredRentals, 'monthly'), [filteredRentals]);
@@ -72,10 +72,10 @@ export function RentalCharts() {
         <div className="mb-4 flex justify-start">
             <Select value={selectedMemberId} onValueChange={setSelectedMemberId}>
             <SelectTrigger className="w-full sm:w-[240px]">
-                <SelectValue placeholder="Select a member" />
+                <SelectValue placeholder="회원 선택" />
             </SelectTrigger>
             <SelectContent>
-                <SelectItem value="all">All Members</SelectItem>
+                <SelectItem value="all">전체 회원</SelectItem>
                 {mockMembers.map((member) => (
                 <SelectItem key={member.id} value={member.id}>
                     {member.name}
@@ -86,14 +86,14 @@ export function RentalCharts() {
         </div>
         <Tabs defaultValue="monthly">
             <TabsList className="mb-4">
-                <TabsTrigger value="monthly">Monthly</TabsTrigger>
-                <TabsTrigger value="yearly">Yearly</TabsTrigger>
+                <TabsTrigger value="monthly">월별</TabsTrigger>
+                <TabsTrigger value="yearly">연도별</TabsTrigger>
             </TabsList>
             <TabsContent value="monthly">
                 <Card>
                 <CardHeader>
-                    <CardTitle>Monthly Rental Volume: {selectedMemberName}</CardTitle>
-                    <CardDescription>Number of books rented out per month over the last year.</CardDescription>
+                    <CardTitle>월별 대여량: {selectedMemberName}</CardTitle>
+                    <CardDescription>지난 1년간 월별 도서 대여량입니다.</CardDescription>
                 </CardHeader>
                 <CardContent>
                     <ChartContainer config={chartConfig} className="h-[300px] w-full">
@@ -111,8 +111,8 @@ export function RentalCharts() {
             <TabsContent value="yearly">
                 <Card>
                 <CardHeader>
-                    <CardTitle>Yearly Rental Volume: {selectedMemberName}</CardTitle>
-                    <CardDescription>Total number of books rented out per year.</CardDescription>
+                    <CardTitle>연도별 대여량: {selectedMemberName}</CardTitle>
+                    <CardDescription>연도별 총 도서 대여량입니다.</CardDescription>
                 </CardHeader>
                 <CardContent>
                     <ChartContainer config={chartConfig} className="h-[300px] w-full">

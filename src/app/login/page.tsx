@@ -13,8 +13,8 @@ import { useToast } from '@/hooks/use-toast';
 import { Loader2, BookMarked } from 'lucide-react';
 
 const loginSchema = z.object({
-  email: z.string().email({ message: 'Please enter a valid email address.' }),
-  password: z.string().min(1, { message: 'Password is required.' }),
+  email: z.string().email({ message: '올바른 이메일 주소를 입력해주세요.' }),
+  password: z.string().min(1, { message: '비밀번호를 입력해주세요.' }),
 });
 
 type LoginFormValues = z.infer<typeof loginSchema>;
@@ -52,15 +52,15 @@ export default function LoginPage() {
         localStorage.setItem('user_role', isAdmin ? 'admin' : 'member');
         
         toast({
-          title: 'Login Successful',
-          description: 'Welcome back!',
+          title: '로그인 성공',
+          description: '돌아오신 것을 환영합니다!',
         });
         router.push('/dashboard');
       } else {
         toast({
           variant: 'destructive',
-          title: 'Login Failed',
-          description: 'Invalid email or password.',
+          title: '로그인 실패',
+          description: '이메일 또는 비밀번호가 잘못되었습니다.',
         });
       }
       setIsLoading(false);
@@ -78,8 +78,8 @@ export default function LoginPage() {
           <div className="mx-auto mb-4 flex items-center justify-center">
             <BookMarked className="h-10 w-10 text-primary" />
           </div>
-          <CardTitle className="text-3xl font-headline">BookBridge</CardTitle>
-          <CardDescription>Enter your credentials to access your account</CardDescription>
+          <CardTitle className="text-3xl font-headline">북브리지</CardTitle>
+          <CardDescription>계정에 접근하려면 정보를 입력하세요</CardDescription>
         </CardHeader>
         <CardContent>
           <Form {...form}>
@@ -89,7 +89,7 @@ export default function LoginPage() {
                 name="email"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Email</FormLabel>
+                    <FormLabel>이메일</FormLabel>
                     <FormControl>
                       <Input placeholder="name@example.com" {...field} />
                     </FormControl>
@@ -102,7 +102,7 @@ export default function LoginPage() {
                 name="password"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Password</FormLabel>
+                    <FormLabel>비밀번호</FormLabel>
                     <FormControl>
                       <Input type="password" placeholder="••••••••" {...field} />
                     </FormControl>
@@ -112,7 +112,7 @@ export default function LoginPage() {
               />
               <Button type="submit" className="w-full" disabled={isLoading}>
                 {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Sign In
+                로그인
               </Button>
             </form>
           </Form>

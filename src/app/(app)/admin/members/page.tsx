@@ -14,11 +14,11 @@ export default function AdminMembersPage() {
 
   return (
     <>
-      <PageHeader title="Manage Members">
+      <PageHeader title="회원 관리">
         {isAdmin && (
             <Button>
                 <PlusCircle className="mr-2 h-4 w-4" />
-                Add New Member
+                새 회원 추가
             </Button>
         )}
       </PageHeader>
