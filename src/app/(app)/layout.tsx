@@ -65,7 +65,18 @@ const BooksProvider = ({ children }: { children: ReactNode }) => {
             try {
                 const storedBooks = localStorage.getItem('books_data');
                 if (storedBooks) {
-                    setBooks(JSON.parse(storedBooks));
+                    const parsedBooks = JSON.parse(storedBooks);
+                    // Simple data migration for adding reservedBy field
+                    const migratedBooks = parsedBooks.map((book: Book) => {
+                        if (book.status === 'reserved' && !book.hasOwnProperty('reservedBy')) {
+                            return { ...book, reservedBy: null }; // Old reservation, user unknown
+                        }
+                        if (book.status !== 'reserved') {
+                            return { ...book, reservedBy: null };
+                        }
+                        return book;
+                    });
+                    setBooks(migratedBooks);
                 } else {
                     // If no data in localStorage, initialize with mock data
                     localStorage.setItem('books_data', JSON.stringify(initialMockBooks));
@@ -97,7 +108,8 @@ const BooksProvider = ({ children }: { children: ReactNode }) => {
                 id: `book-${Date.now()}`,
                 status: 'available',
                 imageHint: 'book cover',
-                description: book.description || `"${book.title}"은(는) ${book.author} 작가의 ${book.category} 장르 책입니다.`
+                description: book.description || `"${book.title}"은(는) ${book.author} 작가의 ${book.category} 장르 책입니다.`,
+                reservedBy: null,
             };
             const newBooks = [newBook, ...prev];
             updateLocalStorage(newBooks);
@@ -128,7 +140,7 @@ const BooksProvider = ({ children }: { children: ReactNode }) => {
     return (
         <BooksContext.Provider value={{ books, addBook, updateBook, deleteBook }}>
             {children}
-        </BooksContext.Provider>
+        </Books-Context.Provider>
     );
 };
 

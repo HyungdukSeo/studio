@@ -35,17 +35,25 @@ export default function DashboardPage() {
   const { toast } = useToast();
 
   const handleToggleReservation = (book: Book) => {
+    if (!user || !user.email) return;
+
     if (book.status === 'available') {
-      updateBook({ ...book, status: 'reserved' });
+      updateBook({ ...book, status: 'reserved', reservedBy: user.email });
       toast({
         title: '예약 완료',
         description: `"${book.title}" 도서를 예약했습니다.`,
       });
-    } else if (book.status === 'reserved') {
-      updateBook({ ...book, status: 'available' });
+    } else if (book.status === 'reserved' && book.reservedBy === user.email) {
+      updateBook({ ...book, status: 'available', reservedBy: null });
       toast({
         title: '예약 취소',
         description: `"${book.title}" 도서 예약을 취소했습니다.`,
+      });
+    } else if (book.status === 'reserved' && book.reservedBy !== user.email) {
+      toast({
+        variant: 'destructive',
+        title: '권한 없음',
+        description: '다른 사람이 예약한 도서는 취소할 수 없습니다.',
       });
     }
   };
@@ -63,11 +71,16 @@ export default function DashboardPage() {
   }, [searchTerm, categoryFilter, books]);
 
   const getButtonInfo = (book: Book): { text: string; disabled: boolean; variant: "outline" | "default" } => {
+    const isMyReservation = book.status === 'reserved' && book.reservedBy === user?.email;
+
     switch (book.status) {
         case 'available':
             return { text: '대여하기', disabled: false, variant: 'outline' };
         case 'reserved':
-            return { text: '예약 취소', disabled: false, variant: 'default' };
+            if (isMyReservation) {
+                return { text: '예약 취소', disabled: false, variant: 'default' };
+            }
+            return { text: '예약중', disabled: true, variant: 'outline' };
         case 'borrowed':
             return { text: '대여 중', disabled: true, variant: 'outline' };
         case 'lost':

@@ -9,6 +9,7 @@ export type Book = {
   coverImage: string;
   imageHint: string;
   status: BookStatus;
+  reservedBy?: string | null;
 };
 
 export type Member = {

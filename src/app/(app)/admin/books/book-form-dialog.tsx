@@ -88,17 +88,17 @@ export function BookFormDialog({ isOpen, onOpenChange, book }: BookFormDialogPro
       const updatedBook: Book = {
         ...book,
         ...data,
+        reservedBy: data.status !== 'reserved' ? null : book.reservedBy,
       };
       updateBook(updatedBook);
     } else {
-      const newBook: Omit<Book, 'id' | 'imageHint' | 'description' | 'status'> & { description?: string, coverImage: string } = {
+      addBook({
         title: data.title,
         author: data.author,
         category: data.category,
         coverImage: data.coverImage,
         description: data.description || '',
-      };
-      addBook(newBook);
+      });
     }
     onOpenChange(false);
   };
