@@ -41,7 +41,7 @@ export function useAuth() {
 
 interface BooksContextType {
     books: Book[];
-    addBook: (book: Omit<Book, 'id' | 'status' | 'imageHint'>) => void;
+    addBook: (book: Omit<Book, 'id' | 'status' | 'imageHint' | 'description'> & { description?: string }) => void;
     updateBook: (book: Book) => void;
     deleteBook: (bookId: string) => void;
 }
@@ -62,9 +62,18 @@ const BooksProvider = ({ children }: { children: ReactNode }) => {
 
     useEffect(() => {
         try {
-            const storedBooks = localStorage.getItem('books_data');
-            if (storedBooks) {
-                setBooks(JSON.parse(storedBooks));
+            const storedBooksRaw = localStorage.getItem('books_data');
+            if (storedBooksRaw) {
+                const storedBooks = JSON.parse(storedBooksRaw);
+                // Simple check to see if the stored data structure matches the new one.
+                // If the first book doesn't have a `description` field, we assume it's old data.
+                if (storedBooks.length > 0 && storedBooks[0].description !== undefined) {
+                    setBooks(storedBooks);
+                } else {
+                    // Stored data is old, re-initialize with fresh data.
+                    setBooks(initialMockBooks);
+                    localStorage.setItem('books_data', JSON.stringify(initialMockBooks));
+                }
             } else {
                 setBooks(initialMockBooks);
                 localStorage.setItem('books_data', JSON.stringify(initialMockBooks));
@@ -84,13 +93,14 @@ const BooksProvider = ({ children }: { children: ReactNode }) => {
         }
     };
     
-    const addBook = useCallback((book: Omit<Book, 'id' | 'status' | 'imageHint'>) => {
+    const addBook = useCallback((book: Omit<Book, 'id' | 'status' | 'imageHint' | 'description'> & { description?: string }) => {
         setBooks(prev => {
             const newBook: Book = {
                 ...book,
                 id: `book-${Date.now()}`,
                 status: 'available',
                 imageHint: 'book cover',
+                description: book.description || `"${book.title}"은(는) ${book.author} 작가의 ${book.category} 장르 책입니다.`
             };
             const newBooks = [newBook, ...prev];
             updateLocalStorage(newBooks);

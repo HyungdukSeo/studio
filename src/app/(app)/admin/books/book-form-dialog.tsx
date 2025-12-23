@@ -16,6 +16,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
 import type { Book, BookStatus } from '@/lib/types';
 import { useBooks } from '../../layout';
 
@@ -92,6 +93,7 @@ export function BookFormDialog({ isOpen, onOpenChange, book }: BookFormDialogPro
     } else {
       const newBook: Omit<Book, 'id' | 'imageHint'> = {
         ...data,
+        description: data.description || '',
       };
       addBook(newBook);
     }
@@ -178,6 +180,19 @@ export function BookFormDialog({ isOpen, onOpenChange, book }: BookFormDialogPro
                       ))}
                     </SelectContent>
                   </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+             <FormField
+              control={form.control}
+              name="description"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>설명</FormLabel>
+                  <FormControl>
+                    <Textarea placeholder="도서에 대한 설명을 입력하세요." {...field} />
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}

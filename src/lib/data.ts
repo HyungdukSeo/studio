@@ -1,4 +1,4 @@
-import type { Book, Member, Rental, BookStatus } from './types';
+import type { Book, Member, Rental } from './types';
 
 const newBooks: {title: string, author: string, category: string, coverImage?: string}[] = [
     { title: '믿는 만큼 자라는 아이들', author: '박혜란', category: '자녀교육' , coverImage: 'https://shopping-phinf.pstatic.net/main_3247666/32476662545.20231102092110.jpg' },
@@ -117,5 +117,3 @@ export const mockRentals: Rental[] = Array.from({ length: 100 }, (_, i) => {
         memberName: member.name
     };
 });
-
-    
