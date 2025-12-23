@@ -37,6 +37,11 @@ export function BooksDataTable<TData, TValue>({ columns, data }: DataTableProps<
     onColumnFiltersChange: setColumnFilters,
     getFilteredRowModel: getFilteredRowModel(),
     autoResetPageIndex: false, // Prevent pagination from resetting on data change
+    initialState: {
+        pagination: {
+            pageSize: 20,
+        },
+    },
     state: {
       columnFilters,
     },

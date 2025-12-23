@@ -1,7 +1,8 @@
 'use client';
 
 import type { ColumnDef } from '@tanstack/react-table';
-import { MoreHorizontal } from 'lucide-react';
+import Image from 'next/image';
+import { MoreHorizontal, Book as BookIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -35,6 +36,31 @@ type ColumnsOptions = {
 }
 
 export const columns = ({ onEdit, onDelete }: ColumnsOptions): ColumnDef<Book>[] => [
+  {
+    accessorKey: 'coverImage',
+    header: '이미지',
+    cell: ({ row }) => {
+      const book = row.original;
+      return (
+        <div className="w-12 h-16 flex items-center justify-center">
+            {book.coverImage ? (
+                <Image
+                    src={book.coverImage}
+                    alt={`${book.title} 표지`}
+                    width={48}
+                    height={64}
+                    className="w-full h-full object-contain rounded-sm"
+                    data-ai-hint={book.imageHint}
+                />
+            ) : (
+                <div className="w-12 h-16 bg-muted flex items-center justify-center rounded-sm">
+                    <BookIcon className="w-6 h-6 text-muted-foreground" />
+                </div>
+            )}
+        </div>
+      )
+    },
+  },
   {
     accessorKey: 'title',
     header: '도서명',
