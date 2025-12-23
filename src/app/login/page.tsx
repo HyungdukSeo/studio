@@ -44,19 +44,42 @@ export default function LoginPage() {
   const onSubmit = (data: LoginFormValues) => {
     setIsLoading(true);
     setTimeout(() => {
-      const isAdmin = data.email === 'root@ipageon.com' && data.password === 'root';
-      const isMember = mockMembers.some(member => member.email === data.email);
+      const isAdminUser = data.email === 'root@ipageon.com';
+      const isMemberUser = mockMembers.some(member => member.email === data.email);
 
-      if (isAdmin || isMember) {
-        localStorage.setItem('auth_token', 'mock_user_token');
-        localStorage.setItem('user_email', data.email);
-        localStorage.setItem('user_role', isAdmin ? 'admin' : 'member');
-        
-        toast({
-          title: '로그인 성공',
-          description: '돌아오신 것을 환영합니다!',
-        });
-        router.push('/dashboard');
+      if (isAdminUser || isMemberUser) {
+        const passwordKey = `password_${data.email}`;
+        const storedPassword = localStorage.getItem(passwordKey);
+
+        if (isAdminUser && !storedPassword) {
+            // First admin login, set initial password
+            if (data.password === 'root') {
+                localStorage.setItem(passwordKey, data.password);
+                loginSuccess(data.email, 'admin');
+            } else {
+                toast({
+                    variant: 'destructive',
+                    title: '로그인 실패',
+                    description: '관리자 초기 비밀번호가 올바르지 않습니다.',
+                });
+            }
+        } else if (storedPassword) {
+            // Subsequent login, check password
+            if (data.password === storedPassword) {
+                const role = isAdminUser ? 'admin' : 'member';
+                loginSuccess(data.email, role);
+            } else {
+                toast({
+                    variant: 'destructive',
+                    title: '로그인 실패',
+                    description: '비밀번호가 올바르지 않습니다.',
+                });
+            }
+        } else {
+            // First time member login, store password
+            localStorage.setItem(passwordKey, data.password);
+            loginSuccess(data.email, 'member');
+        }
       } else {
         toast({
           variant: 'destructive',
@@ -65,8 +88,21 @@ export default function LoginPage() {
         });
       }
       setIsLoading(false);
-    }, 1000);
+    }, 500);
   };
+  
+  const loginSuccess = (email: string, role: 'admin' | 'member') => {
+    localStorage.setItem('auth_token', 'mock_user_token');
+    localStorage.setItem('user_email', email);
+    localStorage.setItem('user_role', role);
+    
+    toast({
+      title: '로그인 성공',
+      description: '돌아오신 것을 환영합니다!',
+    });
+    router.push('/dashboard');
+  }
+
 
   if (!isClient) {
     return null;

@@ -37,7 +37,6 @@ export function UserNav() {
   };
 
   const userInitial = user?.email ? user.email.charAt(0).toUpperCase() : '?';
-  const isAdmin = user?.role === 'admin';
 
   return (
     <DropdownMenu>
@@ -62,12 +61,10 @@ export function UserNav() {
             <User className="mr-2 h-4 w-4" />
             <span>프로필</span>
           </DropdownMenuItem>
-           {isAdmin && (
             <DropdownMenuItem onClick={handleChangePassword}>
                 <Lock className="mr-2 h-4 w-4" />
                 <span>비밀번호 변경</span>
             </DropdownMenuItem>
-           )}
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={handleLogout}>
