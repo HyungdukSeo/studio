@@ -57,26 +57,67 @@ export function useBooks() {
 }
 
 const BooksProvider = ({ children }: { children: ReactNode }) => {
-    const [books, setBooks] = useState<Book[]>(initialMockBooks);
+    const [books, setBooks] = useState<Book[]>([]);
+    const [isBooksInitialized, setIsBooksInitialized] = useState(false);
 
+    useEffect(() => {
+        try {
+            const storedBooks = localStorage.getItem('books_data');
+            if (storedBooks) {
+                setBooks(JSON.parse(storedBooks));
+            } else {
+                setBooks(initialMockBooks);
+                localStorage.setItem('books_data', JSON.stringify(initialMockBooks));
+            }
+        } catch (error) {
+            console.error("Failed to access localStorage or parse books data:", error);
+            setBooks(initialMockBooks);
+        }
+        setIsBooksInitialized(true);
+    }, []);
+
+    const updateLocalStorage = (newBooks: Book[]) => {
+        try {
+            localStorage.setItem('books_data', JSON.stringify(newBooks));
+        } catch (error) {
+            console.error("Failed to save books data to localStorage:", error);
+        }
+    };
+    
     const addBook = useCallback((book: Omit<Book, 'id' | 'status' | 'imageHint'>) => {
-        const newBook: Book = {
-            ...book,
-            id: `book-${Date.now()}`,
-            status: 'available',
-            imageHint: 'book cover',
-        };
-        setBooks(prev => [newBook, ...prev]);
+        setBooks(prev => {
+            const newBook: Book = {
+                ...book,
+                id: `book-${Date.now()}`,
+                status: 'available',
+                imageHint: 'book cover',
+            };
+            const newBooks = [newBook, ...prev];
+            updateLocalStorage(newBooks);
+            return newBooks;
+        });
     }, []);
 
     const updateBook = useCallback((updatedBook: Book) => {
-        setBooks(prev => prev.map(b => b.id === updatedBook.id ? updatedBook : b));
+        setBooks(prev => {
+            const newBooks = prev.map(b => b.id === updatedBook.id ? updatedBook : b);
+            updateLocalStorage(newBooks);
+            return newBooks;
+        });
     }, []);
 
     const deleteBook = useCallback((bookId: string) => {
-        setBooks(prev => prev.filter(b => b.id !== bookId));
+        setBooks(prev => {
+            const newBooks = prev.filter(b => b.id !== bookId);
+            updateLocalStorage(newBooks);
+            return newBooks;
+        });
     }, []);
     
+    if (!isBooksInitialized) {
+        return null; // Or a loading indicator
+    }
+
     return (
         <BooksContext.Provider value={{ books, addBook, updateBook, deleteBook }}>
             {children}
