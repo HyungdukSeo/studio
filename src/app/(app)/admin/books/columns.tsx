@@ -13,7 +13,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Badge } from '@/components/ui/badge';
-import type { Book, BookStatus } from '@/lib/types';
+import type { Book, BookStatus, Member } from '@/lib/types';
 import { useAuth } from '../../layout';
 
 const statusDisplay: Record<BookStatus, string> = {
@@ -33,9 +33,17 @@ const statusStyles: Record<BookStatus, string> = {
 type ColumnsOptions = {
   onEdit: (book: Book) => void;
   onDelete: (bookId: string) => void;
-}
+  members: Member[];
+};
 
-export const columns = ({ onEdit, onDelete }: ColumnsOptions): ColumnDef<Book>[] => [
+const handleRequestReturn = (book: Book) => {
+  if (!book.reservedBy) return;
+  const subject = `도서반납요청의 건`;
+  const body = `빌려가신 "${book.title}" 의 반납을 요청드립니다.`;
+  window.location.href = `mailto:${book.reservedBy}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+};
+
+export const columns = ({ onEdit, onDelete, members }: ColumnsOptions): ColumnDef<Book>[] => [
   {
     accessorKey: 'coverImage',
     header: '이미지',
@@ -78,8 +86,18 @@ export const columns = ({ onEdit, onDelete }: ColumnsOptions): ColumnDef<Book>[]
     accessorKey: 'status',
     header: '상태',
     cell: ({ row }) => {
-      const status = row.getValue('status') as BookStatus;
-      return <Badge className={statusStyles[status]}>{statusDisplay[status]}</Badge>;
+      const book = row.original;
+      const status = book.status;
+      let statusText = statusDisplay[status];
+      
+      if ((status === 'borrowed' || status === 'reserved') && book.reservedBy) {
+          const member = members.find(m => m.email === book.reservedBy);
+          if (member) {
+              statusText = `${statusDisplay[status]}: ${member.name}`;
+          }
+      }
+
+      return <Badge className={`${statusStyles[status]} whitespace-nowrap`}>{statusText}</Badge>;
     },
   },
   {
@@ -109,6 +127,11 @@ export const columns = ({ onEdit, onDelete }: ColumnsOptions): ColumnDef<Book>[]
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={() => onEdit(book)}>도서 수정</DropdownMenuItem>
+              {book.status === 'borrowed' && (
+                <DropdownMenuItem onClick={() => handleRequestReturn(book)}>
+                  반납 요청
+                </DropdownMenuItem>
+              )}
               <DropdownMenuItem 
                 className="text-destructive focus:bg-destructive/10 focus:text-destructive"
                 onClick={() => onDelete(book.id)}

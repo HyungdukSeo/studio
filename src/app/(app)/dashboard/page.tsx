@@ -20,6 +20,14 @@ const statusDisplay: Record<BookStatus, string> = {
   lost: '분실',
 };
 
+const statusFilterOptions: Record<string, string> = {
+  all: '모든 상태',
+  my: '내가 대여한 도서',
+  available: '대여 가능',
+  reserved: '예약 중',
+  borrowed: '대여 중',
+};
+
 const statusStyles: Record<BookStatus, string> = {
   available: 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900/50 dark:text-green-300 dark:border-green-700',
   borrowed: 'bg-red-100 text-red-800 border-red-200 dark:bg-red-900/50 dark:text-red-300 dark:border-red-700',
@@ -30,6 +38,7 @@ const statusStyles: Record<BookStatus, string> = {
 export default function DashboardPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
+  const [statusFilter, setStatusFilter] = useState('all');
   const { user } = useAuth();
   const { books, updateBook } = useBooks();
   const { toast } = useToast();
@@ -66,9 +75,25 @@ export default function DashboardPage() {
         book.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
         book.author.toLowerCase().includes(searchTerm.toLowerCase());
       const matchesCategory = categoryFilter === 'all' || book.category === categoryFilter;
-      return matchesSearch && matchesCategory;
+      
+      const matchesStatus = () => {
+        switch (statusFilter) {
+          case 'all':
+            return true;
+          case 'my':
+            return book.reservedBy === user?.email;
+          case 'available':
+          case 'reserved':
+          case 'borrowed':
+            return book.status === statusFilter;
+          default:
+            return true;
+        }
+      };
+
+      return matchesSearch && matchesCategory && matchesStatus();
     });
-  }, [searchTerm, categoryFilter, books]);
+  }, [searchTerm, categoryFilter, statusFilter, books, user?.email]);
 
   const getButtonInfo = (book: Book): { text: string; disabled: boolean; variant: "outline" | "default" } => {
     const isMyReservation = book.status === 'reserved' && book.reservedBy === user?.email;
@@ -93,8 +118,8 @@ export default function DashboardPage() {
   return (
     <>
       <PageHeader title={user?.role === 'admin' ? "도서 관리 현황" : "도서 목록"} />
-      <div className="mb-6 flex flex-col gap-4 sm:flex-row">
-        <div className="relative flex-1">
+      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:flex-wrap">
+        <div className="relative flex-1 sm:min-w-[200px]">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="제목 또는 저자로 검색..."
@@ -103,18 +128,32 @@ export default function DashboardPage() {
             className="pl-10"
           />
         </div>
-        <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-          <SelectTrigger className="w-full sm:w-[180px]">
-            <SelectValue placeholder="분류로 필터링" />
-          </SelectTrigger>
-          <SelectContent>
-            {categories.map((cat) => (
-              <SelectItem key={cat} value={cat}>
-                {cat === 'all' ? '모든 분류' : cat}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <div className="flex gap-4">
+            <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                <SelectTrigger className="w-full flex-1 sm:w-[180px]">
+                    <SelectValue placeholder="분류로 필터링" />
+                </SelectTrigger>
+                <SelectContent>
+                    {categories.map((cat) => (
+                    <SelectItem key={cat} value={cat}>
+                        {cat === 'all' ? '모든 분류' : cat}
+                    </SelectItem>
+                    ))}
+                </SelectContent>
+            </Select>
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="w-full flex-1 sm:w-[180px]">
+                    <SelectValue placeholder="상태로 필터링" />
+                </SelectTrigger>
+                <SelectContent>
+                    {Object.entries(statusFilterOptions).map(([key, value]) => (
+                        <SelectItem key={key} value={key}>
+                            {value}
+                        </SelectItem>
+                    ))}
+                </SelectContent>
+            </Select>
+        </div>
       </div>
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {filteredBooks.map((book) => {

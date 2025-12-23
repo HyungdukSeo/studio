@@ -9,6 +9,7 @@ import { BooksDataTable } from './data-table';
 import { PlusCircle } from 'lucide-react';
 import { useAuth, useBooks } from '../../layout';
 import { BookFormDialog } from './book-form-dialog';
+import { mockMembers } from '@/lib/data';
 
 export default function AdminBooksPage() {
   const { user } = useAuth();
@@ -36,7 +37,11 @@ export default function AdminBooksPage() {
     deleteBook(bookId);
   }
 
-  const dynamicColumns = columns({ onEdit: handleEdit, onDelete: handleDelete });
+  const dynamicColumns = columns({ 
+    onEdit: handleEdit, 
+    onDelete: handleDelete,
+    members: mockMembers,
+  });
 
 
   return (
