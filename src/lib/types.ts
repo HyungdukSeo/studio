@@ -10,6 +10,7 @@ export type Book = {
   imageHint: string;
   status: BookStatus;
   reservedBy?: string | null;
+  dueDate?: string | null;
 };
 
 export type Member = {
