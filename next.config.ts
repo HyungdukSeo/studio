@@ -30,7 +30,7 @@ const nextConfig: NextConfig = {
       },
       {
         protocol: 'https',
-        hostname: 'search.pstatic.net',
+        hostname: 'shopping-phinf.pstatic.net',
         port: '',
         pathname: '/**',
       }
