@@ -58,8 +58,6 @@ export default function DashboardPage() {
         description: `"${book.title}" 도서 예약을 취소했습니다.`,
       });
     } else if (book.status === 'borrowed' && book.reservedBy === user.email) {
-       // 일반 사용자는 직접 반납할 수 없으므로 이 부분은 동작하지 않아야 함
-       // 하지만 토스트 메시지는 남겨둠
        toast({
         variant: 'destructive',
         title: '반납 불가',
