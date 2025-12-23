@@ -2,12 +2,12 @@ name: Build and Push to Docker Hub
 
 on:
   push:
-    branches: ["main"]
-    tags: ["v*.*.*"]
+    branches:
+      - main
   workflow_dispatch:
 
 env:
-  IMAGE_NAME: ${{ secrets.DOCKERHUB_USERNAME }}/studio
+  IMAGE_NAME: seohyungduk/studio
 
 jobs:
   build-and-push:
@@ -26,7 +26,7 @@ jobs:
       - name: Login to Docker Hub
         uses: docker/login-action@v3
         with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          username: seohyungduk
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Extract metadata (tags, labels)
@@ -47,8 +47,5 @@ jobs:
           push: true
           platforms: linux/amd64
           tags: |
-            seohyungduk/studio:latest
-            seohyungduk/studio:${{ github.sha }}
-          labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+            seohyungduk/studio:${{ github.sha }}  
+
