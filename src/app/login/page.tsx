@@ -13,7 +13,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Loader2, BookMarked } from 'lucide-react';
 import { useFirebase } from '@/firebase';
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword, AuthErrorCodes } from 'firebase/auth';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { doc, setDoc } from 'firebase/firestore';
 import { mockMembers } from '@/lib/data';
 
 const loginSchema = z.object({
@@ -57,24 +57,28 @@ export default function LoginPage() {
         await signInWithEmailAndPassword(auth, data.email, data.password);
         loginSuccess(data.email);
     } catch (error: any) {
-        if (error.code === AuthErrorCodes.INVALID_CREDENTIAL || error.code === AuthErrorCodes.USER_NOT_FOUND) {
-            // 사용자가 없거나 비밀번호가 틀린 경우, 첫 로그인 시도를 확인
+        if (error.code === AuthErrorCodes.INVALID_CREDENTIAL) {
              try {
                 const memberInfo = mockMembers.find(m => m.email === data.email);
                 const isAdmin = data.email === 'root@ipageon.com';
 
                 if ((memberInfo || isAdmin) && data.password === DEFAULT_PASSWORD) {
-                    // 기본 비밀번호로 가입 시도
                     const userCredential = await createUserWithEmailAndPassword(auth, data.email, data.password);
                     const memberRef = doc(firestore, "members", userCredential.user.uid);
 
+                    let newMemberData;
                     if (isAdmin) {
-                        await setDoc(memberRef, { id: userCredential.user.uid, email: data.email, name: '관리자', role: 'admin' });
+                        newMemberData = { id: userCredential.user.uid, email: data.email, name: '관리자', role: 'admin' };
                     } else if (memberInfo) {
-                        await setDoc(memberRef, { ...memberInfo, id: userCredential.user.uid, role: 'member' });
+                        newMemberData = { ...memberInfo, id: userCredential.user.uid, role: 'member' };
                     }
                     
-                    loginSuccess(data.email);
+                    if (newMemberData) {
+                        await setDoc(memberRef, newMemberData);
+                        loginSuccess(data.email);
+                    } else {
+                        throw new Error("회원 정보를 찾을 수 없습니다.");
+                    }
                 } else {
                      toast({
                         variant: 'destructive',

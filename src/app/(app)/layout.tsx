@@ -15,10 +15,10 @@ import {
 import { UserNav } from '@/components/user-nav';
 import { MainNav } from '@/components/main-nav';
 import { Logo } from '@/components/logo';
-import { mockBooks as initialMockBooks, mockMembers } from '@/lib/data';
+import { mockBooks as initialMockBooks } from '@/lib/data';
 import type { Book, Rental, Member } from '@/lib/types';
 import { FirebaseClientProvider, useFirebase, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, doc, addDoc, updateDoc, deleteDoc, writeBatch, serverTimestamp, query, where, getDocs, Timestamp } from 'firebase/firestore';
+import { collection, doc, writeBatch, serverTimestamp, query, getDocs, Timestamp } from 'firebase/firestore';
 import { addDocumentNonBlocking, deleteDocumentNonBlocking, setDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 
 
@@ -28,6 +28,7 @@ interface AuthContextType {
   user: {
     email: string | null;
     role: UserRole;
+    name: string | null;
   } | null;
   isVerified: boolean;
 }
@@ -85,16 +86,6 @@ const BooksProvider = ({ children }: { children: ReactNode }) => {
                 initialMockBooks.forEach(book => {
                     const bookDocRef = doc(collection(firestore, 'books'));
                     batch.set(bookDocRef, {...book, id: bookDocRef.id});
-                });
-                await batch.commit();
-            }
-
-            const membersSnapshot = await getDocs(query(collection(firestore, 'members')));
-            if(membersSnapshot.empty) {
-                const batch = writeBatch(firestore);
-                mockMembers.forEach(member => {
-                    const memberDocRef = doc(firestore, 'members', member.email);
-                     batch.set(memberDocRef, { ...member, id: memberDocRef.id });
                 });
                 await batch.commit();
             }
@@ -173,30 +164,41 @@ const BooksProvider = ({ children }: { children: ReactNode }) => {
 
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
-  const { user, isUserLoading } = useFirebase();
+  const { user, isUserLoading, firestore } = useFirebase();
   const router = useRouter();
 
   const [authContext, setAuthContext] = useState<AuthContextType>({ user: null, isVerified: false });
+
+  const memberDocRef = useMemoFirebase(() => {
+      if (!user || !firestore) return null;
+      return doc(firestore, 'members', user.uid);
+  }, [user, firestore]);
+  const { data: memberData, isLoading: isMemberLoading } = useCollection<Member>(memberDocRef ? collection(firestore, 'members') : null);
+
 
   useEffect(() => {
     if (!isUserLoading) {
       if (!user) {
         router.replace('/login');
-      } else {
+      } else if (memberData) {
+        const currentMember = memberData.find(m => m.id === user.uid);
         const userEmail = user.email || '';
-        const isAdmin = userEmail === 'root@ipageon.com';
+        const role = currentMember?.role || (userEmail === 'root@ipageon.com' ? 'admin' : 'member');
+        const name = currentMember?.name || user.displayName;
+        
         setAuthContext({
           user: {
             email: userEmail,
-            role: isAdmin ? 'admin' : 'member',
+            role: role,
+            name: name,
           },
           isVerified: true,
         });
       }
     }
-  }, [user, isUserLoading, router]);
+  }, [user, isUserLoading, router, memberData]);
 
-  if (isUserLoading || !authContext.isVerified) {
+  if (isUserLoading || !authContext.isVerified || isMemberLoading) {
     return (
       <div className="flex h-screen items-center justify-center">
         <Loader2 className="h-10 w-10 animate-spin text-primary" />
