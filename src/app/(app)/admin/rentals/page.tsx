@@ -20,7 +20,7 @@ export default function AdminRentalsPage() {
 
   const handleApproveLoan = useCallback((book: Book) => {
     if (!book.reservedBy) return;
-    const dueDate = addDays(new Date(), 7);
+    const dueDate = addDays(new Date(), 14);
     const updatedBook = {
         ...book, 
         status: 'borrowed' as const,
@@ -33,7 +33,7 @@ export default function AdminRentalsPage() {
         addRental({
             bookId: book.id,
             memberId: member.id,
-            rentalDate: new Date(),
+            rentalDate: new Date().toISOString(),
             returnDate: null,
             bookTitle: book.title,
             memberName: member.name
@@ -45,7 +45,7 @@ export default function AdminRentalsPage() {
   const handleExtendDueDate = useCallback((book: Book) => {
     if (!book.dueDate) return;
     const currentDueDate = new Date(book.dueDate);
-    const newDueDate = addDays(currentDueDate, 7);
+    const newDueDate = addDays(currentDueDate, 14);
     updateBook({ ...book, dueDate: format(newDueDate, 'yyyy-MM-dd') });
   }, [updateBook]);
   
