@@ -33,7 +33,7 @@ import { Label } from '@/components/ui/label';
 
 export function UserNav() {
   const router = useRouter();
-  const authContext = useAuth();
+  const { user } = useAuth();
   const { auth, user: firebaseUser } = useFirebase();
   const { seedInitialData } = useBooks();
   const { toast } = useToast();
@@ -99,8 +99,8 @@ export function UserNav() {
     }
   };
 
-  const userInitial = authContext?.user?.email ? authContext.user.email.charAt(0).toUpperCase() : '?';
-  const isAdmin = authContext?.user?.role === 'admin';
+  const userInitial = user?.email ? user.email.charAt(0).toUpperCase() : '?';
+  const isAdmin = user?.role === 'admin';
 
   return (
     <>
@@ -116,8 +116,8 @@ export function UserNav() {
         <DropdownMenuContent className="w-56" align="end" forceMount>
           <DropdownMenuLabel className="font-normal">
             <div className="flex flex-col space-y-1">
-              <p className="text-sm font-medium leading-none">{authContext?.user?.name}</p>
-              <p className="text-xs leading-none text-muted-foreground truncate">{authContext?.user?.email}</p>
+              <p className="text-sm font-medium leading-none">{user?.name}</p>
+              <p className="text-xs leading-none text-muted-foreground truncate">{user?.email}</p>
             </div>
           </DropdownMenuLabel>
           <DropdownMenuSeparator />

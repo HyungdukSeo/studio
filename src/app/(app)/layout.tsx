@@ -17,58 +17,47 @@ import { MainNav } from '@/components/main-nav';
 import { Logo } from '@/components/logo';
 import { mockBooks, initialMockMembers } from '@/lib/data';
 import type { Book, Rental, Member } from '@/lib/types';
-import { FirebaseClientProvider, useFirebase, useCollection, useMemoFirebase } from '@/firebase';
+import { useFirebase, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, doc, writeBatch, serverTimestamp, query, where, getDocs, Timestamp, getDoc, setDoc } from 'firebase/firestore';
 import { addDocumentNonBlocking, deleteDocumentNonBlocking, setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { useToast } from '@/hooks/use-toast';
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
 
-
 type UserRole = 'admin' | 'member';
 
-interface AuthContextType {
+interface AppContextType {
   user: {
     uid: string;
     email: string | null;
     role: UserRole;
     name: string | null;
   } | null;
-  isVerified: boolean;
+  books: Book[];
+  addBook: (book: Omit<Book, 'id' | 'imageHint' | 'description' | 'status' | 'reservedBy' | 'dueDate'> & { description?: string, coverImage: string }) => void;
+  updateBook: (book: Book) => void;
+  deleteBook: (bookId: string) => void;
+  rentals: Rental[];
+  addRental: (rental: Omit<Rental, 'id'>) => void;
+  endRental: (bookId: string) => void;
+  members: Member[];
+  seedInitialData: () => Promise<void>;
 }
 
-const AuthContext = createContext<AuthContextType | null>(null);
+const AppContext = createContext<AppContextType | null>(null);
 
 export function useAuth() {
-    const context = useContext(AuthContext);
-    if (!context) {
-        throw new Error('useAuth must be used within an AuthProvider');
-    }
-    return context;
+    const context = useContext(AppContext);
+    if (!context) throw new Error('useAuth must be used within an AppProvider');
+    return { user: context.user };
 }
-
-interface BooksContextType {
-    books: Book[];
-    addBook: (book: Omit<Book, 'id' | 'imageHint' | 'description' | 'status' | 'reservedBy' | 'dueDate'> & { description?: string, coverImage: string }) => void;
-    updateBook: (book: Book) => void;
-    deleteBook: (bookId: string) => void;
-    rentals: Rental[];
-    addRental: (rental: Omit<Rental, 'id'>) => void;
-    endRental: (bookId: string) => void;
-    members: Member[];
-    seedInitialData: () => Promise<void>;
-}
-
-const BooksContext = createContext<BooksContextType | null>(null);
 
 export function useBooks() {
-    const context = useContext(BooksContext);
-    if (!context) {
-        throw new Error('useBooks must be used within a BooksProvider');
-    }
+    const context = useContext(AppContext);
+    if (!context) throw new Error('useBooks must be used within an AppProvider');
     return context;
 }
 
-const BooksProvider = ({ children }: { children: ReactNode }) => {
+const AppProvider = ({ children, user }: { children: ReactNode, user: AppContextType['user'] }) => {
     const { firestore, auth } = useFirebase();
     const { toast } = useToast();
 
@@ -146,67 +135,53 @@ const BooksProvider = ({ children }: { children: ReactNode }) => {
     
             const batch = writeBatch(firestore);
     
-            // Seed Books
             const booksCollectionRef = collection(firestore, 'books');
-            const booksSnapshot = await getDocs(booksCollectionRef);
-            if (booksSnapshot.empty) {
-                mockBooks.forEach(book => {
-                    const bookRef = doc(collection(firestore, 'books'));
-                    batch.set(bookRef, book);
-                });
+            mockBooks.forEach(book => {
+                const bookRef = doc(booksCollectionRef);
+                batch.set(bookRef, book);
+            });
+    
+            const currentUser = auth.currentUser;
+            if (!currentUser || !currentUser.email) {
+                toast({ variant: 'destructive', title: '오류', description: '데이터를 생성하려면 먼저 로그인해야 합니다.' });
+                return;
             }
-    
-            // Seed Members
-            const membersCollectionRef = collection(firestore, 'members');
-            const membersSnapshot = await getDocs(membersCollectionRef);
-            if (membersSnapshot.empty) {
-                const currentUser = auth.currentUser;
-                if (!currentUser || !currentUser.email) {
-                    toast({ variant: 'destructive', title: '오류', description: '현재 로그인 정보를 확인할 수 없습니다. 다시 로그인 후 시도해주세요.' });
-                    return;
-                }
-                const currentUserEmail = currentUser.email;
-                const currentUserPassword = prompt('데이터 생성을 위해 현재 관리자 계정의 비밀번호를 입력해주세요.');
+            const currentUserEmail = currentUser.email;
+            const currentUserPassword = prompt('데이터 생성을 위해 현재 관리자 계정의 비밀번호를 입력해주세요.');
 
-                if (!currentUserPassword) {
-                    toast({ variant: 'destructive', title: '취소됨', description: '비밀번호 입력이 취소되었습니다.' });
-                    return;
-                }
+            if (!currentUserPassword) {
+                toast({ variant: 'destructive', title: '취소됨', description: '비밀번호 입력이 취소되었습니다.' });
+                return;
+            }
 
-                for (const member of initialMockMembers) {
-                    try {
-                        // Create user in Auth
-                        const userCredential = await createUserWithEmailAndPassword(auth, member.email, '123456');
-                        const user = userCredential.user;
-    
-                        // Add member doc to Firestore batch
-                        const memberRef = doc(firestore, 'members', user.uid);
-                        batch.set(memberRef, {
-                            id: user.uid,
-                            name: member.name,
-                            email: member.email,
-                            role: member.role || 'member'
-                        });
-                    } catch (error: any) {
-                        if (error.code === 'auth/email-already-in-use') {
-                            console.log(`Member ${member.email} already exists in Auth. Skipping Auth creation.`);
-                             const q = query(membersCollectionRef, where("email", "==", member.email));
-                             const existingMemberSnap = await getDocs(q);
-                             if(existingMemberSnap.empty){
-                                console.error(`Auth user ${member.email} exists, but no Firestore record found. This should not happen.`);
-                             }
-                        } else {
-                            console.error(`Failed to create member ${member.email}:`, error);
-                            toast({ variant: 'destructive', title: '오류', description: `${member.email} 계정 생성에 실패했습니다: ${error.message}` });
+            for (const member of initialMockMembers) {
+                try {
+                    if (member.email === currentUserEmail) {
+                        const memberRef = doc(firestore, 'members', currentUser.uid);
+                        if (!(await getDoc(memberRef)).exists()) {
+                           batch.set(memberRef, { ...member, id: currentUser.uid });
                         }
+                        continue;
+                    }
+
+                    const userCredential = await createUserWithEmailAndPassword(auth, member.email, '123456');
+                    const newUser = userCredential.user;
+
+                    const memberRef = doc(firestore, 'members', newUser.uid);
+                    batch.set(memberRef, { ...member, id: newUser.uid });
+
+                } catch (error: any) {
+                    if (error.code === 'auth/email-already-in-use') {
+                        console.log(`Member ${member.email} already exists in Auth. Skipping Auth creation.`);
+                    } else {
+                        console.error(`Failed to create member ${member.email}:`, error);
+                        toast({ variant: 'destructive', title: '오류', description: `${member.email} 계정 생성에 실패했습니다: ${error.message}` });
                     }
                 }
-                // After loop, sign back in as admin
-                await signInWithEmailAndPassword(auth, currentUserEmail, currentUserPassword);
-
             }
-    
-            // Set the lock
+            
+            await signInWithEmailAndPassword(auth, currentUserEmail, currentUserPassword);
+
             batch.set(lockRef, { completedAt: serverTimestamp() });
             
             await batch.commit();
@@ -233,35 +208,28 @@ const BooksProvider = ({ children }: { children: ReactNode }) => {
     })) || [];
 
     return (
-        <BooksContext.Provider value={{ books: books || [], addBook, updateBook, deleteBook, rentals: rentalsWithDateFix, addRental, endRental, members: members || [], seedInitialData }}>
+        <AppContext.Provider value={{ user, books: books || [], addBook, updateBook, deleteBook, rentals: rentalsWithDateFix, addRental, endRental, members: members || [], seedInitialData }}>
             {children}
-        </BooksContext.Provider>
+        </AppContext.Provider>
     );
 };
-
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { user: firebaseUser, isUserLoading, firestore } = useFirebase();
   const router = useRouter();
   const { toast } = useToast();
-  const [authContext, setAuthContext] = useState<AuthContextType | null>(null);
-  const [isSyncing, setIsSyncing] = useState(true);
+  const [authInfo, setAuthInfo] = useState<{ user: AppContextType['user'], isVerified: boolean } | null>(null);
 
   useEffect(() => {
     if (isUserLoading) return;
 
     if (!firebaseUser) {
       router.replace('/login');
-      setIsSyncing(false);
       return;
     }
 
     const syncAndVerifyUser = async () => {
-      if (!firestore || !firebaseUser.email) {
-          setIsSyncing(false);
-          return;
-      }
-      setIsSyncing(true);
+      if (!firestore || !firebaseUser.email) return;
 
       try {
           const memberDocRef = doc(firestore, 'members', firebaseUser.uid);
@@ -286,7 +254,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               finalMemberData = memberDocSnap.data() as Member;
           }
 
-          setAuthContext({
+          setAuthInfo({
               user: {
                   uid: firebaseUser.uid,
                   email: finalMemberData.email,
@@ -299,8 +267,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       } catch (error) {
           console.error("Error syncing user data:", error);
           toast({ variant: 'destructive', title: '오류', description: '사용자 정보 동기화에 실패했습니다.' });
-      } finally {
-          setIsSyncing(false);
+          setAuthInfo({ user: null, isVerified: false });
       }
     };
     
@@ -308,31 +275,27 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   }, [firebaseUser, isUserLoading, router, firestore, toast]);
 
-  if (isUserLoading || isSyncing) {
+  if (isUserLoading || !authInfo) {
     return (
       <div className="flex h-screen items-center justify-center">
         <Loader2 className="h-10 w-10 animate-spin text-primary" />
-        {isSyncing && !isUserLoading && <p className="ml-4">사용자 정보를 동기화하는 중입니다...</p>}
+        {!isUserLoading && !authInfo && <p className="ml-4">사용자 정보를 동기화하는 중입니다...</p>}
       </div>
     );
   }
   
-  if (!authContext?.isVerified && !isUserLoading) {
-    return (
-        <div className="flex h-screen items-center justify-center">
-             <Loader2 className="h-10 w-10 animate-spin text-primary" />
-             <p className="ml-4">인증 정보를 확인 중입니다...</p>
-        </div>
-    );
-  }
-  
-  if (!authContext) {
-      return null;
+  if (!authInfo.isVerified) {
+      // This state can be used to show a specific error UI if needed
+      return (
+          <div className="flex h-screen items-center justify-center">
+               <Loader2 className="h-10 w-10 animate-spin text-primary" />
+               <p className="ml-4">인증 정보를 확인 중입니다...</p>
+          </div>
+      );
   }
 
   return (
-    <AuthContext.Provider value={authContext}>
-      <BooksProvider>
+    <AppProvider user={authInfo.user}>
         <SidebarProvider>
           <Sidebar>
             <SidebarHeader>
@@ -359,7 +322,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             </main>
           </SidebarInset>
         </SidebarProvider>
-      </BooksProvider>
-    </AuthContext.Provider>
+    </AppProvider>
   );
 }
