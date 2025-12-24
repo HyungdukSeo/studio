@@ -61,6 +61,35 @@ const chartConfig = {
   },
 } satisfies ChartConfig;
 
+const MemberChartCard = ({ memberName, rentals, period, onBarClick }: { memberName: string; rentals: Rental[]; period: 'monthly' | 'yearly', onBarClick: (data: any, memberRentals: Rental[]) => void;}) => {
+    const chartData = useMemo(() => processData(rentals, period), [rentals, period]);
+
+    if (chartData.length === 0) return null;
+
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle>{memberName}</CardTitle>
+                <CardDescription>
+                    {period === 'monthly' ? '지난 1년간 월별 도서 대여량입니다.' : '연도별 총 도서 대여량입니다.'} (막대를 클릭하면 상세 내역을 볼 수 있습니다)
+                </CardDescription>
+            </CardHeader>
+            <CardContent>
+                <ChartContainer config={chartConfig} className="h-[300px] w-full">
+                    <BarChart data={chartData} accessibilityLayer onClick={(data) => onBarClick(data, rentals)}>
+                        <CartesianGrid vertical={false} />
+                        <XAxis dataKey="name" tickLine={false} tickMargin={10} axisLine={false} />
+                        <YAxis />
+                        <ChartTooltip content={<ChartTooltipContent />} />
+                        <Bar dataKey="rentals" fill="var(--color-rentals)" radius={4} style={{ cursor: 'pointer' }}/>
+                    </BarChart>
+                </ChartContainer>
+            </CardContent>
+        </Card>
+    );
+};
+
+
 export function RentalCharts() {
   const { rentals } = useBooks();
   const [selectedMemberId, setSelectedMemberId] = useState('all');
@@ -68,41 +97,49 @@ export function RentalCharts() {
   const [selectedPeriodRentals, setSelectedPeriodRentals] = useState<Rental[]>([]);
   const [dialogTitle, setDialogTitle] = useState('');
 
-  const filteredRentals = useMemo(() => {
+  const groupedRentalsByMember = useMemo(() => {
+    if (selectedMemberId !== 'all') {
+      return null;
+    }
+    const grouped: { [memberId: string]: { memberName: string, rentals: Rental[] } } = {};
+    rentals.forEach(rental => {
+      if (!grouped[rental.memberId]) {
+        grouped[rental.memberId] = { memberName: rental.memberName, rentals: [] };
+      }
+      grouped[rental.memberId].rentals.push(rental);
+    });
+    return Object.values(grouped).sort((a,b) => a.memberName.localeCompare(b.memberName));
+  }, [selectedMemberId, rentals]);
+  
+  const filteredRentalsForSingleMember = useMemo(() => {
     if (selectedMemberId === 'all') {
-      return rentals;
+      return [];
     }
     return rentals.filter((rental) => rental.memberId === selectedMemberId);
   }, [selectedMemberId, rentals]);
-  
-  const selectedMemberName = useMemo(() => {
-    if (selectedMemberId === 'all') return '전체 회원';
-    return mockMembers.find(m => m.id === selectedMemberId)?.name ?? '전체 회원';
-  }, [selectedMemberId]);
 
-  const monthlyData = useMemo(() => processData(filteredRentals, 'monthly'), [filteredRentals]);
-  const yearlyData = useMemo(() => processData(filteredRentals, 'yearly'), [filteredRentals]);
-
-  const handleBarClick = (data: any, periodType: 'monthly' | 'yearly') => {
+  const handleBarClick = (data: any, memberRentals: Rental[], periodType: 'monthly' | 'yearly') => {
     if (!data || !data.activePayload || data.activePayload.length === 0) return;
 
     const clickedPeriod = data.activePayload[0].payload.name;
     
-    const rentalsInPeriod = filteredRentals.filter(rental => {
+    const rentalsInPeriod = memberRentals.filter(rental => {
         const rentalDate = new Date(rental.rentalDate);
+        let periodKey: string;
         if (periodType === 'monthly') {
-            const periodKey = rentalDate.toLocaleString('default', { month: 'short', year: '2-digit' });
-            return periodKey === clickedPeriod;
+            periodKey = rentalDate.toLocaleString('default', { month: 'short', year: '2-digit' });
         } else { // yearly
-            const periodKey = rentalDate.getFullYear().toString();
-            return periodKey === clickedPeriod;
+            periodKey = rentalDate.getFullYear().toString();
         }
+        return periodKey === clickedPeriod;
     });
 
     setSelectedPeriodRentals(rentalsInPeriod);
     setDialogTitle(`${clickedPeriod} 대여 목록`);
     setIsDialogOpen(true);
   };
+
+  const selectedMemberName = mockMembers.find(m => m.id === selectedMemberId)?.name ?? '선택된 회원';
 
   return (
     <>
@@ -121,48 +158,32 @@ export function RentalCharts() {
           </SelectContent>
         </Select>
       </div>
-      <Tabs defaultValue="monthly">
+      <Tabs defaultValue="monthly" className="w-full">
         <TabsList className="mb-4">
           <TabsTrigger value="monthly">월별</TabsTrigger>
           <TabsTrigger value="yearly">연도별</TabsTrigger>
         </TabsList>
+        
         <TabsContent value="monthly">
-          <Card>
-            <CardHeader>
-              <CardTitle>월별 대여량: {selectedMemberName}</CardTitle>
-              <CardDescription>지난 1년간 월별 도서 대여량입니다. (막대를 클릭하면 상세 내역을 볼 수 있습니다)</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ChartContainer config={chartConfig} className="h-[300px] w-full">
-                <BarChart data={monthlyData} accessibilityLayer onClick={(data) => handleBarClick(data, 'monthly')}>
-                  <CartesianGrid vertical={false} />
-                  <XAxis dataKey="name" tickLine={false} tickMargin={10} axisLine={false} />
-                  <YAxis />
-                  <ChartTooltip content={<ChartTooltipContent />} />
-                  <Bar dataKey="rentals" fill="var(--color-rentals)" radius={4} style={{ cursor: 'pointer' }}/>
-                </BarChart>
-              </ChartContainer>
-            </CardContent>
-          </Card>
+            <div className="space-y-4">
+            {selectedMemberId === 'all' 
+                ? groupedRentalsByMember?.map(({ memberName, rentals: memberRentals }) => (
+                    <MemberChartCard key={memberName} memberName={memberName} rentals={memberRentals} period="monthly" onBarClick={(data, currentRentals) => handleBarClick(data, currentRentals, 'monthly')}/>
+                ))
+                : <MemberChartCard memberName={selectedMemberName} rentals={filteredRentalsForSingleMember} period="monthly" onBarClick={(data, currentRentals) => handleBarClick(data, currentRentals, 'monthly')}/>
+            }
+            </div>
         </TabsContent>
+
         <TabsContent value="yearly">
-          <Card>
-            <CardHeader>
-              <CardTitle>연도별 대여량: {selectedMemberName}</CardTitle>
-              <CardDescription>연도별 총 도서 대여량입니다. (막대를 클릭하면 상세 내역을 볼 수 있습니다)</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ChartContainer config={chartConfig} className="h-[300px] w-full">
-                <BarChart data={yearlyData} accessibilityLayer onClick={(data) => handleBarClick(data, 'yearly')}>
-                  <CartesianGrid vertical={false} />
-                  <XAxis dataKey="name" tickLine={false} tickMargin={10} axisLine={false} />
-                  <YAxis />
-                  <ChartTooltip content={<ChartTooltipContent />} />
-                  <Bar dataKey="rentals" fill="var(--color-rentals)" radius={4} style={{ cursor: 'pointer' }} />
-                </BarChart>
-              </ChartContainer>
-            </CardContent>
-          </Card>
+            <div className="space-y-4">
+            {selectedMemberId === 'all' 
+                ? groupedRentalsByMember?.map(({ memberName, rentals: memberRentals }) => (
+                    <MemberChartCard key={memberName} memberName={memberName} rentals={memberRentals} period="yearly" onBarClick={(data, currentRentals) => handleBarClick(data, currentRentals, 'yearly')}/>
+                ))
+                : <MemberChartCard memberName={selectedMemberName} rentals={filteredRentalsForSingleMember} period="yearly" onBarClick={(data, currentRentals) => handleBarClick(data, currentRentals, 'yearly')}/>
+            }
+            </div>
         </TabsContent>
       </Tabs>
 
