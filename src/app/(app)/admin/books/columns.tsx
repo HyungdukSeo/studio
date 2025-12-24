@@ -39,8 +39,11 @@ type ColumnsOptions = {
 
 const handleRequestReturn = (book: Book) => {
   if (!book.reservedBy) return;
+  const member = mockMembers.find(m => m.email === book.reservedBy);
+  if (!member) return;
+
   const subject = `도서반납요청의 건`;
-  const body = `빌려가신 "${book.title}" 의 반납을 요청드립니다.`;
+  const body = `${member.name}님, 빌려가신 "${book.title}" 의 반납을 요청드립니다.`;
   window.location.href = `mailto:${book.reservedBy}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
 };
 
@@ -129,7 +132,7 @@ export const columns = ({ onEdit, onDelete, onConfirmReturn, members }: ColumnsO
                   반납 확인
                 </DropdownMenuItem>
               )}
-              {(book.status === 'borrowed' || book.status === 'reserved') && (
+              {book.status === 'borrowed' && (
                 <DropdownMenuItem onClick={() => handleRequestReturn(book)}>
                   반납 요청
                 </DropdownMenuItem>

@@ -20,6 +20,8 @@ const loginSchema = z.object({
 
 type LoginFormValues = z.infer<typeof loginSchema>;
 
+const DEFAULT_PASSWORD = '1234';
+
 export default function LoginPage() {
   const router = useRouter();
   const { toast } = useToast();
@@ -51,20 +53,8 @@ export default function LoginPage() {
         const passwordKey = `password_${data.email}`;
         const storedPassword = localStorage.getItem(passwordKey);
 
-        if (isAdminUser && !storedPassword) {
-            // First admin login, set initial password
-            if (data.password === 'root') {
-                localStorage.setItem(passwordKey, data.password);
-                loginSuccess(data.email, 'admin');
-            } else {
-                toast({
-                    variant: 'destructive',
-                    title: '로그인 실패',
-                    description: '관리자 초기 비밀번호가 올바르지 않습니다.',
-                });
-            }
-        } else if (storedPassword) {
-            // Subsequent login, check password
+        if (storedPassword) {
+            // 이미 비밀번호가 설정된 사용자
             if (data.password === storedPassword) {
                 const role = isAdminUser ? 'admin' : 'member';
                 loginSuccess(data.email, role);
@@ -76,9 +66,18 @@ export default function LoginPage() {
                 });
             }
         } else {
-            // First time member login, store password
-            localStorage.setItem(passwordKey, data.password);
-            loginSuccess(data.email, 'member');
+            // 첫 로그인 사용자 (비밀번호 '1234' 확인)
+            if (data.password === DEFAULT_PASSWORD) {
+                localStorage.setItem(passwordKey, data.password); // 다음 로그인을 위해 기본 비밀번호 저장
+                const role = isAdminUser ? 'admin' : 'member';
+                loginSuccess(data.email, role);
+            } else {
+                 toast({
+                    variant: 'destructive',
+                    title: '로그인 실패',
+                    description: `첫 로그인이거나 비밀번호가 초기화된 경우, 기본 비밀번호(${DEFAULT_PASSWORD})를 입력해주세요.`,
+                });
+            }
         }
       } else {
         toast({

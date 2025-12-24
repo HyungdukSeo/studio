@@ -57,18 +57,6 @@ export default function DashboardPage() {
         title: '예약 취소',
         description: `"${book.title}" 도서 예약을 취소했습니다.`,
       });
-    } else if (book.status === 'borrowed' && book.reservedBy === user.email) {
-       toast({
-        variant: 'destructive',
-        title: '반납 불가',
-        description: '도서 반납은 관리자에게 문의해주세요.',
-      });
-    } else {
-       toast({
-        variant: 'destructive',
-        title: '권한 없음',
-        description: '다른 사람이 예약/대여한 도서는 변경할 수 없습니다.',
-      });
     }
   };
   
@@ -162,7 +150,7 @@ export default function DashboardPage() {
             </Select>
         </div>
       </div>
-      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+      <div className="grid grid-cols-2 gap-6 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
         {filteredBooks.map((book) => {
            const buttonInfo = getButtonInfo(book);
            return (
@@ -174,7 +162,7 @@ export default function DashboardPage() {
                         alt={`${book.title} 표지`}
                         width={400}
                         height={600}
-                        className="w-full h-48 object-cover"
+                        className="w-full h-48 object-contain"
                         data-ai-hint={book.imageHint}
                     />
                 ) : (
