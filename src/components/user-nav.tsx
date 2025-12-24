@@ -13,7 +13,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { LogOut, User, Lock } from 'lucide-react';
+import { LogOut, User, Lock, Database } from 'lucide-react';
 import { useAuth } from '@/app/(app)/layout';
 import { useFirebase } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
@@ -44,6 +44,18 @@ export function UserNav() {
     if (!auth) return;
     await signOut(auth);
     router.push('/login');
+  };
+
+  const handleSeedData = () => {
+    if (authContext?.user?.role === 'admin' && authContext.seedInitialData) {
+      authContext.seedInitialData();
+    } else {
+      toast({
+        variant: 'destructive',
+        title: '권한 없음',
+        description: '관리자만 이 작업을 수행할 수 있습니다.',
+      });
+    }
   };
   
   const handlePasswordChange = async () => {
@@ -98,7 +110,7 @@ export function UserNav() {
     }
   };
 
-  const userInitial = authContext.user?.email ? authContext.user.email.charAt(0).toUpperCase() : '?';
+  const userInitial = authContext?.user?.email ? authContext.user.email.charAt(0).toUpperCase() : '?';
 
   return (
     <>
@@ -114,8 +126,8 @@ export function UserNav() {
         <DropdownMenuContent className="w-56" align="end" forceMount>
           <DropdownMenuLabel className="font-normal">
             <div className="flex flex-col space-y-1">
-              <p className="text-sm font-medium leading-none">{authContext.user?.name}</p>
-              <p className="text-xs leading-none text-muted-foreground truncate">{authContext.user?.email}</p>
+              <p className="text-sm font-medium leading-none">{authContext?.user?.name}</p>
+              <p className="text-xs leading-none text-muted-foreground truncate">{authContext?.user?.email}</p>
             </div>
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
@@ -124,10 +136,16 @@ export function UserNav() {
               <User className="mr-2 h-4 w-4" />
               <span>프로필</span>
             </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setIsPasswordDialogOpen(true)}>
-                  <Lock className="mr-2 h-4 w-4" />
-                  <span>비밀번호 변경</span>
+            <DropdownMenuItem onClick={() => setIsPasswordDialogOpen(true)}>
+                <Lock className="mr-2 h-4 w-4" />
+                <span>비밀번호 변경</span>
+            </DropdownMenuItem>
+            {authContext?.user?.role === 'admin' && (
+              <DropdownMenuItem onClick={handleSeedData}>
+                <Database className="mr-2 h-4 w-4" />
+                <span>초기 데이터 설정</span>
               </DropdownMenuItem>
+            )}
           </DropdownMenuGroup>
           <DropdownMenuSeparator />
           <DropdownMenuItem onClick={handleLogout}>
