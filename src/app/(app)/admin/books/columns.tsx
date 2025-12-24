@@ -37,9 +37,9 @@ type ColumnsOptions = {
   members: Member[];
 };
 
-const handleRequestReturn = (book: Book) => {
+const handleRequestReturn = (book: Book, members: Member[]) => {
   if (!book.reservedBy) return;
-  const member = mockMembers.find(m => m.email === book.reservedBy);
+  const member = members.find(m => m.email === book.reservedBy);
   if (!member) return;
 
   const subject = `도서반납요청의 건`;
@@ -133,7 +133,7 @@ export const columns = ({ onEdit, onDelete, onConfirmReturn, members }: ColumnsO
                 </DropdownMenuItem>
               )}
               {book.status === 'borrowed' && (
-                <DropdownMenuItem onClick={() => handleRequestReturn(book)}>
+                <DropdownMenuItem onClick={() => handleRequestReturn(book, members)}>
                   반납 요청
                 </DropdownMenuItem>
               )}

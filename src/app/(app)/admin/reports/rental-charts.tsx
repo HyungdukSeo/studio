@@ -12,14 +12,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useBooks } from '../../layout';
-import { mockMembers } from '@/lib/data';
-import type { Rental } from '@/lib/types';
+import type { Rental, Member } from '@/lib/types';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { format } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 
-const processAllMembersData = (rentals: Rental[], period: 'monthly' | 'yearly', members: typeof mockMembers) => {
+const processAllMembersData = (rentals: Rental[], period: 'monthly' | 'yearly', members: Member[]) => {
     const dataMap = new Map<string, { [memberName: string]: number }>();
     const oneYearAgo = new Date();
     oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
@@ -93,7 +91,7 @@ const processSingleMemberData = (rentals: Rental[], period: 'monthly' | 'yearly'
 };
 
 
-const generateChartConfig = (members: typeof mockMembers): ChartConfig => {
+const generateChartConfig = (members: Member[]): ChartConfig => {
     const config: ChartConfig = {
       rentals: {
         label: '대여',
@@ -109,7 +107,7 @@ const generateChartConfig = (members: typeof mockMembers): ChartConfig => {
     return config;
 };
   
-const AllMembersChartCard = ({ rentals, period, onBarClick, members }: { rentals: Rental[]; period: 'monthly' | 'yearly'; onBarClick: (data: any, periodType: 'monthly' | 'yearly') => void; members: typeof mockMembers; }) => {
+const AllMembersChartCard = ({ rentals, period, onBarClick, members }: { rentals: Rental[]; period: 'monthly' | 'yearly'; onBarClick: (data: any, periodType: 'monthly' | 'yearly') => void; members: Member[]; }) => {
     const chartData = useMemo(() => processAllMembersData(rentals, period, members), [rentals, period, members]);
     const chartConfig = useMemo(() => generateChartConfig(members), [members]);
     
@@ -199,9 +197,12 @@ const SingleMemberChartCard = ({ memberName, rentals, period, onBarClick }: { me
     );
 };
 
+interface RentalChartsProps {
+  rentals: Rental[];
+  members: Member[];
+}
 
-export function RentalCharts() {
-  const { rentals } = useBooks();
+export function RentalCharts({ rentals, members }: RentalChartsProps) {
   const [selectedMemberId, setSelectedMemberId] = useState('all');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedPeriodRentals, setSelectedPeriodRentals] = useState<Rental[]>([]);
@@ -211,8 +212,10 @@ export function RentalCharts() {
     if (selectedMemberId === 'all') {
       return rentals;
     }
-    return rentals.filter((rental) => rental.memberId === selectedMemberId);
-  }, [selectedMemberId, rentals]);
+    const selectedMember = members.find(m => m.id === selectedMemberId);
+    if (!selectedMember) return [];
+    return rentals.filter((rental) => rental.memberId === selectedMember.id);
+  }, [selectedMemberId, rentals, members]);
   
   const handleBarClick = (data: any, periodType: 'monthly' | 'yearly') => {
     if (!data || !data.activePayload || data.activePayload.length === 0) return;
@@ -220,9 +223,11 @@ export function RentalCharts() {
     const clickedPeriod = data.activePayload[0].payload.name;
     let relevantRentals = rentals;
 
-    // If a specific member is selected, filter rentals for that member
     if (selectedMemberId !== 'all') {
-        relevantRentals = rentals.filter(r => r.memberId === selectedMemberId);
+        const selectedMember = members.find(m => m.id === selectedMemberId);
+        if (selectedMember) {
+            relevantRentals = rentals.filter(r => r.memberId === selectedMember.id);
+        }
     }
     
     const rentalsInPeriod = relevantRentals.filter(rental => {
@@ -241,7 +246,8 @@ export function RentalCharts() {
     setIsDialogOpen(true);
   };
 
-  const selectedMemberName = mockMembers.find(m => m.id === selectedMemberId)?.name ?? '선택된 회원';
+  const selectedMember = members.find(m => m.id === selectedMemberId);
+  const selectedMemberName = selectedMember?.name ?? '선택된 회원';
 
   return (
     <>
@@ -252,7 +258,7 @@ export function RentalCharts() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">전체 회원</SelectItem>
-            {mockMembers.map((member) => (
+            {members.map((member) => (
               <SelectItem key={member.id} value={member.id}>
                 {member.name}
               </SelectItem>
@@ -269,7 +275,7 @@ export function RentalCharts() {
         <TabsContent value="monthly">
             <div className="space-y-4">
             {selectedMemberId === 'all' 
-                ? <AllMembersChartCard rentals={rentals} period="monthly" onBarClick={handleBarClick} members={mockMembers}/>
+                ? <AllMembersChartCard rentals={rentals} period="monthly" onBarClick={handleBarClick} members={members}/>
                 : <SingleMemberChartCard memberName={selectedMemberName} rentals={filteredRentals} period="monthly" onBarClick={handleBarClick}/>
             }
             </div>
@@ -278,7 +284,7 @@ export function RentalCharts() {
         <TabsContent value="yearly">
             <div className="space-y-4">
             {selectedMemberId === 'all' 
-                ? <AllMembersChartCard rentals={rentals} period="yearly" onBarClick={handleBarClick} members={mockMembers} />
+                ? <AllMembersChartCard rentals={rentals} period="yearly" onBarClick={handleBarClick} members={members} />
                 : <SingleMemberChartCard memberName={selectedMemberName} rentals={filteredRentals} period="yearly" onBarClick={handleBarClick} />
             }
             </div>

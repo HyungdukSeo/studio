@@ -50,9 +50,8 @@ const newBooks: {title: string, author: string, category: string, coverImage?: s
     { title: '데미안', author: '헤르만 헤세', category: '소설', coverImage: 'https://shopping-phinf.pstatic.net/main_3244164/32441645060.20230620100615.jpg' },
 ];
 
-export const mockBooks: Book[] = newBooks.map((book, i) => {
+export const mockBooks: Omit<Book, 'id'>[] = newBooks.map((book, i) => {
     return {
-        id: `book-${i + 1}`,
         title: book.title,
         author: book.author,
         category: book.category,
@@ -87,8 +86,7 @@ const newMembers: { name: string; email: string }[] = [
     { name: '한은영', email: 'mshan@ipageon.com' },
 ];
 
-export const mockMembers: Member[] = newMembers.map((member, i) => ({
-    id: `member-${i + 1}`,
+export const mockMembers: Omit<Member, 'id'>[] = newMembers.map((member, i) => ({
     name: member.name,
     email: member.email,
 }));

@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useEffect, useState, createContext, useContext, useCallback, ReactNode } from 'react';
+import { useEffect, useState, createContext, useContext, useCallback, ReactNode, useMemo } from 'react';
 import { Loader2 } from 'lucide-react';
 import {
   SidebarProvider,
@@ -15,8 +15,11 @@ import {
 import { UserNav } from '@/components/user-nav';
 import { MainNav } from '@/components/main-nav';
 import { Logo } from '@/components/logo';
-import { mockBooks as initialMockBooks } from '@/lib/data';
-import type { Book, Rental } from '@/lib/types';
+import { mockBooks as initialMockBooks, mockMembers } from '@/lib/data';
+import type { Book, Rental, Member } from '@/lib/types';
+import { FirebaseClientProvider, useFirebase, useCollection, useMemoFirebase } from '@/firebase';
+import { collection, doc, addDoc, updateDoc, deleteDoc, writeBatch, serverTimestamp, query, where, getDocs, Timestamp } from 'firebase/firestore';
+import { addDocumentNonBlocking, deleteDocumentNonBlocking, setDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 
 
 type UserRole = 'admin' | 'member';
@@ -47,6 +50,7 @@ interface BooksContextType {
     rentals: Rental[];
     addRental: (rental: Omit<Rental, 'id'>) => void;
     endRental: (bookId: string) => void;
+    members: Member[];
 }
 
 const BooksContext = createContext<BooksContextType | null>(null);
@@ -60,110 +64,108 @@ export function useBooks() {
 }
 
 const BooksProvider = ({ children }: { children: ReactNode }) => {
-    const [books, setBooks] = useState<Book[]>([]);
-    const [rentals, setRentals] = useState<Rental[]>([]);
-    const [isDataInitialized, setIsDataInitialized] = useState(false);
+    const { firestore } = useFirebase();
+
+    const booksRef = useMemoFirebase(() => firestore ? collection(firestore, 'books') : null, [firestore]);
+    const { data: books, isLoading: isLoadingBooks } = useCollection<Book>(booksRef);
+
+    const rentalsRef = useMemoFirebase(() => firestore ? collection(firestore, 'rentals') : null, [firestore]);
+    const { data: rentals, isLoading: isLoadingRentals } = useCollection<Rental>(rentalsRef);
+
+    const membersRef = useMemoFirebase(() => firestore ? collection(firestore, 'members') : null, [firestore]);
+    const { data: members, isLoading: isLoadingMembers } = useCollection<Member>(membersRef);
 
     useEffect(() => {
-        const initializeData = () => {
-            try {
-                const storedBooks = localStorage.getItem('books_data');
-                if (storedBooks) {
-                    setBooks(JSON.parse(storedBooks));
-                } else {
-                    localStorage.setItem('books_data', JSON.stringify(initialMockBooks));
-                    setBooks(initialMockBooks);
-                }
+        const seedData = async () => {
+            if (!firestore) return;
 
-                const storedRentals = localStorage.getItem('rentals_data');
-                if (storedRentals) {
-                    setRentals(JSON.parse(storedRentals));
-                } else {
-                    localStorage.setItem('rentals_data', JSON.stringify([]));
-                    setRentals([]);
-                }
-            } catch (error) {
-                console.error("Failed to initialize or load data:", error);
-                setBooks(initialMockBooks);
-                setRentals([]);
+            const booksSnapshot = await getDocs(query(collection(firestore, 'books')));
+            if (booksSnapshot.empty) {
+                const batch = writeBatch(firestore);
+                initialMockBooks.forEach(book => {
+                    const bookDocRef = doc(collection(firestore, 'books'));
+                    batch.set(bookDocRef, {...book, id: bookDocRef.id});
+                });
+                await batch.commit();
             }
-            setIsDataInitialized(true);
+
+            const membersSnapshot = await getDocs(query(collection(firestore, 'members')));
+            if(membersSnapshot.empty) {
+                const batch = writeBatch(firestore);
+                mockMembers.forEach(member => {
+                    const memberDocRef = doc(firestore, 'members', member.email);
+                     batch.set(memberDocRef, { ...member, id: memberDocRef.id });
+                });
+                await batch.commit();
+            }
         };
 
-        initializeData();
-    }, []);
+        seedData();
+    }, [firestore]);
 
-    const updateLocalStorage = (key: string, data: any[]) => {
-        try {
-            localStorage.setItem(key, JSON.stringify(data));
-        } catch (error) {
-            console.error(`Failed to save ${key} to localStorage:`, error);
-        }
-    };
-    
+
     const addBook = useCallback((book: Omit<Book, 'id' | 'imageHint' | 'description' | 'status' | 'reservedBy'> & { description?: string, coverImage: string }) => {
-        setBooks(prev => {
-            const newBook: Book = {
-                ...book,
-                id: `book-${Date.now()}`,
-                status: 'available',
-                imageHint: 'book cover',
-                description: book.description || `"${book.title}"은(는) ${book.author} 작가의 ${book.category} 장르 책입니다.`,
-                reservedBy: null,
-            };
-            const newBooks = [newBook, ...prev];
-            updateLocalStorage('books_data', newBooks);
-            return newBooks;
-        });
-    }, []);
+        if (!booksRef) return;
+        const newBook: Omit<Book, 'id'> = {
+            ...book,
+            status: 'available',
+            imageHint: 'book cover',
+            description: book.description || `"${book.title}"은(는) ${book.author} 작가의 ${book.category} 장르 책입니다.`,
+            reservedBy: null,
+        };
+        addDocumentNonBlocking(booksRef, newBook);
+    }, [booksRef]);
 
     const updateBook = useCallback((updatedBook: Book) => {
-        setBooks(prev => {
-            const newBooks = prev.map(b => b.id === updatedBook.id ? updatedBook : b);
-            updateLocalStorage('books_data', newBooks);
-            return newBooks;
-        });
-    }, []);
+        if (!firestore) return;
+        const bookRef = doc(firestore, 'books', updatedBook.id);
+        const { id, ...bookData } = updatedBook;
+        setDocumentNonBlocking(bookRef, bookData, { merge: true });
+    }, [firestore]);
 
     const deleteBook = useCallback((bookId: string) => {
-        setBooks(prev => {
-            const newBooks = prev.filter(b => b.id !== bookId);
-            updateLocalStorage('books_data', newBooks);
-            return newBooks;
-        });
-    }, []);
+        if (!firestore) return;
+        const bookRef = doc(firestore, 'books', bookId);
+        deleteDocumentNonBlocking(bookRef);
+    }, [firestore]);
 
     const addRental = useCallback((rental: Omit<Rental, 'id'>) => {
-        setRentals(prev => {
-            const newRental: Rental = {
-                ...rental,
-                id: `rental-${Date.now()}`
-            };
-            const newRentals = [...prev, newRental];
-            updateLocalStorage('rentals_data', newRentals);
-            return newRentals;
+        if (!rentalsRef) return;
+         addDocumentNonBlocking(rentalsRef, {
+            ...rental,
+            rentalDate: serverTimestamp()
         });
-    }, []);
+    }, [rentalsRef]);
 
-    const endRental = useCallback((bookId: string) => {
-        setRentals(prev => {
-            const now = new Date();
-            const newRentals = prev.map(r => 
-                (r.bookId === bookId && r.returnDate === null) 
-                ? { ...r, returnDate: now.toISOString() } 
-                : r
-            );
-            updateLocalStorage('rentals_data', newRentals);
-            return newRentals;
+    const endRental = useCallback(async (bookId: string) => {
+        if (!firestore) return;
+        const q = query(collection(firestore, 'rentals'), where('bookId', '==', bookId), where('returnDate', '==', null));
+        const querySnapshot = await getDocs(q);
+        
+        querySnapshot.forEach((document) => {
+            const rentalRef = doc(firestore, 'rentals', document.id);
+            updateDocumentNonBlocking(rentalRef, { returnDate: serverTimestamp() });
         });
-    }, []);
+    }, [firestore]);
+
+    const rentalsWithDateFix = useMemo(() => {
+        return rentals?.map(r => ({
+            ...r,
+            rentalDate: r.rentalDate && (r.rentalDate as unknown as Timestamp).toDate().toISOString(),
+            returnDate: r.returnDate && (r.returnDate as unknown as Timestamp).toDate().toISOString()
+        })) || [];
+    }, [rentals]);
     
-    if (!isDataInitialized) {
-        return null; // Or a loading indicator
+    if (isLoadingBooks || isLoadingRentals || isLoadingMembers) {
+        return (
+          <div className="flex h-screen items-center justify-center">
+            <Loader2 className="h-10 w-10 animate-spin text-primary" />
+          </div>
+        );
     }
 
     return (
-        <BooksContext.Provider value={{ books, addBook, updateBook, deleteBook, rentals, addRental, endRental }}>
+        <BooksContext.Provider value={{ books: books || [], addBook, updateBook, deleteBook, rentals: rentalsWithDateFix, addRental, endRental, members: members || [] }}>
             {children}
         </BooksContext.Provider>
     );
@@ -171,23 +173,30 @@ const BooksProvider = ({ children }: { children: ReactNode }) => {
 
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
+  const { user, isUserLoading } = useFirebase();
   const router = useRouter();
-  const [auth, setAuth] = useState<AuthContextType>({ user: null, isVerified: false });
 
+  const [authContext, setAuthContext] = useState<AuthContextType>({ user: null, isVerified: false });
 
   useEffect(() => {
-    const token = localStorage.getItem('auth_token');
-    const email = localStorage.getItem('user_email');
-    const role = localStorage.getItem('user_role') as UserRole;
-
-    if (!token) {
-      router.replace('/login');
-    } else {
-      setAuth({ user: { email, role }, isVerified: true });
+    if (!isUserLoading) {
+      if (!user) {
+        router.replace('/login');
+      } else {
+        const userEmail = user.email || '';
+        const isAdmin = userEmail === 'root@ipageon.com';
+        setAuthContext({
+          user: {
+            email: userEmail,
+            role: isAdmin ? 'admin' : 'member',
+          },
+          isVerified: true,
+        });
+      }
     }
-  }, [router]);
+  }, [user, isUserLoading, router]);
 
-  if (!auth.isVerified) {
+  if (isUserLoading || !authContext.isVerified) {
     return (
       <div className="flex h-screen items-center justify-center">
         <Loader2 className="h-10 w-10 animate-spin text-primary" />
@@ -196,7 +205,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={auth}>
+    <AuthContext.Provider value={authContext}>
       <BooksProvider>
         <SidebarProvider>
           <Sidebar>

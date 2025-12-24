@@ -9,12 +9,11 @@ import { BooksDataTable } from './data-table';
 import { PlusCircle } from 'lucide-react';
 import { useAuth, useBooks } from '../../layout';
 import { BookFormDialog } from './book-form-dialog';
-import { mockMembers } from '@/lib/data';
 
 export default function AdminBooksPage() {
   const { user } = useAuth();
   const isAdmin = user?.role === 'admin';
-  const { books, deleteBook, updateBook } = useBooks();
+  const { books, deleteBook, updateBook, members } = useBooks();
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingBook, setEditingBook] = useState<Book | undefined>(undefined);
 
@@ -45,7 +44,7 @@ export default function AdminBooksPage() {
     onEdit: handleEdit, 
     onDelete: handleDelete,
     onConfirmReturn: handleConfirmReturn,
-    members: mockMembers,
+    members: members,
   });
 
 

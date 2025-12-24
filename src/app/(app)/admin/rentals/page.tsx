@@ -5,7 +5,6 @@ import { PageHeader } from '@/components/page-header';
 import { columns } from './columns';
 import { RentalStatusTable } from './rental-status-table';
 import { useAuth, useBooks } from '../../layout';
-import { mockMembers } from '@/lib/data';
 import type { Book, Member } from '@/lib/types';
 import { format, addDays } from 'date-fns';
 
@@ -14,7 +13,7 @@ export type RentalInfo = Book & {
 };
 
 export default function AdminRentalsPage() {
-  const { books, updateBook, addRental, endRental } = useBooks();
+  const { books, updateBook, addRental, endRental, members } = useBooks();
   const { user } = useAuth();
   const isAdmin = user?.role === 'admin';
 
@@ -28,7 +27,7 @@ export default function AdminRentalsPage() {
     };
     updateBook(updatedBook);
     
-    const member = mockMembers.find(m => m.email === book.reservedBy);
+    const member = members.find(m => m.email === book.reservedBy);
     if(member) {
         addRental({
             bookId: book.id,
@@ -40,7 +39,7 @@ export default function AdminRentalsPage() {
         });
     }
 
-  }, [updateBook, addRental]);
+  }, [updateBook, addRental, members]);
 
   const handleExtendDueDate = useCallback((book: Book) => {
     if (!book.dueDate) return;
@@ -59,13 +58,13 @@ export default function AdminRentalsPage() {
     const rentedBooks = books.filter(book => book.status === 'borrowed' || book.status === 'reserved');
     
     return rentedBooks.map(book => {
-      const member = mockMembers.find(m => m.email === book.reservedBy);
+      const member = members.find(m => m.email === book.reservedBy);
       return {
         ...book,
         memberName: member?.name || '정보 없음',
       };
     }).sort((a, b) => a.memberName.localeCompare(b.memberName));
-  }, [books]);
+  }, [books, members]);
   
   const dynamicColumns = useMemo(() => columns({ 
     onApproveLoan: handleApproveLoan,

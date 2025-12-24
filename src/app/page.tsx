@@ -3,18 +3,21 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
+import { useFirebase } from '@/firebase';
 
 export default function HomePage() {
   const router = useRouter();
+  const { user, isUserLoading } = useFirebase();
 
   useEffect(() => {
-    const token = localStorage.getItem('auth_token');
-    if (token) {
-      router.replace('/dashboard');
-    } else {
-      router.replace('/login');
+    if (!isUserLoading) {
+      if (user) {
+        router.replace('/dashboard');
+      } else {
+        router.replace('/login');
+      }
     }
-  }, [router]);
+  }, [user, isUserLoading, router]);
 
   return (
     <div className="flex h-screen w-full items-center justify-center bg-background">

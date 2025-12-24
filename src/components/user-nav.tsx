@@ -15,7 +15,9 @@ import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { LogOut, User, Lock } from 'lucide-react';
 import { useAuth } from '@/app/(app)/layout';
+import { useFirebase } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
+import { signOut, updatePassword } from 'firebase/auth';
 import {
   Dialog,
   DialogContent,
@@ -31,20 +33,23 @@ import { Label } from '@/components/ui/label';
 
 export function UserNav() {
   const router = useRouter();
-  const { user } = useAuth();
+  const authContext = useAuth();
+  const { auth, user: firebaseUser } = useFirebase();
   const { toast } = useToast();
   const [isPasswordDialogOpen, setIsPasswordDialogOpen] = useState(false);
   const [newPassword, setNewPassword] = useState('');
 
-  const handleLogout = () => {
-    localStorage.removeItem('auth_token');
-    localStorage.removeItem('user_email');
-    localStorage.removeItem('user_role');
+  const handleLogout = async () => {
+    if (!auth) return;
+    await signOut(auth);
     router.push('/login');
   };
   
-  const handlePasswordChange = () => {
-    if (!user?.email) return;
+  const handlePasswordChange = async () => {
+    if (!firebaseUser) {
+        toast({ variant: 'destructive', title: '오류', description: '사용자 정보가 없습니다.' });
+        return;
+    }
     
     if (!newPassword || newPassword.length < 4) {
         toast({
@@ -55,17 +60,25 @@ export function UserNav() {
         return;
     }
 
-    const passwordKey = `password_${user.email}`;
-    localStorage.setItem(passwordKey, newPassword);
-    toast({
-      title: '성공',
-      description: '비밀번호가 성공적으로 변경되었습니다.',
-    });
-    setIsPasswordDialogOpen(false);
-    setNewPassword('');
+    try {
+        await updatePassword(firebaseUser, newPassword);
+        toast({
+            title: '성공',
+            description: '비밀번호가 성공적으로 변경되었습니다.',
+        });
+        setIsPasswordDialogOpen(false);
+        setNewPassword('');
+    } catch (error: any) {
+        console.error("Password update error:", error);
+        toast({
+            variant: 'destructive',
+            title: '비밀번호 변경 실패',
+            description: error.message,
+        });
+    }
   };
 
-  const userInitial = user?.email ? user.email.charAt(0).toUpperCase() : '?';
+  const userInitial = authContext.user?.email ? authContext.user.email.charAt(0).toUpperCase() : '?';
 
   return (
     <>
@@ -82,7 +95,7 @@ export function UserNav() {
           <DropdownMenuLabel className="font-normal">
             <div className="flex flex-col space-y-1">
               <p className="text-sm font-medium leading-none">로그인 계정</p>
-              <p className="text-xs leading-none text-muted-foreground truncate">{user?.email}</p>
+              <p className="text-xs leading-none text-muted-foreground truncate">{authContext.user?.email}</p>
             </div>
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
