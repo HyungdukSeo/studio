@@ -13,8 +13,8 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { LogOut, User, Lock } from 'lucide-react';
-import { useAuth } from '@/app/(app)/layout';
+import { LogOut, User, Lock, Database } from 'lucide-react';
+import { useAuth, useBooks } from '@/app/(app)/layout';
 import { useFirebase } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { signOut, updatePassword, reauthenticateWithCredential, EmailAuthProvider } from 'firebase/auth';
@@ -35,6 +35,7 @@ export function UserNav() {
   const router = useRouter();
   const authContext = useAuth();
   const { auth, user: firebaseUser } = useFirebase();
+  const { seedInitialData } = useBooks();
   const { toast } = useToast();
   const [isPasswordDialogOpen, setIsPasswordDialogOpen] = useState(false);
   const [newPassword, setNewPassword] = useState('');
@@ -85,7 +86,7 @@ export function UserNav() {
     } catch (error: any) {
         console.error("Password update error:", error);
         let description = '비밀번호 변경에 실패했습니다. 잠시 후 다시 시도해주세요.';
-        if (error.code === 'auth/wrong-password') {
+        if (error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
           description = '현재 비밀번호가 올바르지 않습니다.';
         } else if (error.code === 'auth/too-many-requests') {
           description = '너무 많은 요청이 있었습니다. 잠시 후 다시 시도해주세요.';
@@ -99,6 +100,7 @@ export function UserNav() {
   };
 
   const userInitial = authContext?.user?.email ? authContext.user.email.charAt(0).toUpperCase() : '?';
+  const isAdmin = authContext?.user?.role === 'admin';
 
   return (
     <>
@@ -128,6 +130,12 @@ export function UserNav() {
                 <Lock className="mr-2 h-4 w-4" />
                 <span>비밀번호 변경</span>
             </DropdownMenuItem>
+             {isAdmin && (
+              <DropdownMenuItem onClick={seedInitialData}>
+                <Database className="mr-2 h-4 w-4" />
+                <span>초기 데이터 설정</span>
+              </DropdownMenuItem>
+            )}
           </DropdownMenuGroup>
           <DropdownMenuSeparator />
           <DropdownMenuItem onClick={handleLogout}>

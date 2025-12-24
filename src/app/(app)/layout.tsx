@@ -21,6 +21,8 @@ import { FirebaseClientProvider, useFirebase, useCollection, useMemoFirebase } f
 import { collection, doc, writeBatch, serverTimestamp, query, where, getDocs, Timestamp, getDoc, setDoc } from 'firebase/firestore';
 import { addDocumentNonBlocking, deleteDocumentNonBlocking, setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { useToast } from '@/hooks/use-toast';
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
+
 
 type UserRole = 'admin' | 'member';
 
@@ -53,6 +55,7 @@ interface BooksContextType {
     addRental: (rental: Omit<Rental, 'id'>) => void;
     endRental: (bookId: string) => void;
     members: Member[];
+    seedInitialData: () => Promise<void>;
 }
 
 const BooksContext = createContext<BooksContextType | null>(null);
@@ -66,7 +69,8 @@ export function useBooks() {
 }
 
 const BooksProvider = ({ children }: { children: ReactNode }) => {
-    const { firestore } = useFirebase();
+    const { firestore, auth } = useFirebase();
+    const { toast } = useToast();
 
     const booksRef = useMemoFirebase(() => firestore ? collection(firestore, 'books') : null, [firestore]);
     const { data: books, isLoading: isLoadingBooks } = useCollection<Book>(booksRef);
@@ -76,14 +80,6 @@ const BooksProvider = ({ children }: { children: ReactNode }) => {
 
     const membersRef = useMemoFirebase(() => firestore ? collection(firestore, 'members') : null, [firestore]);
     const { data: members, isLoading: isLoadingMembers } = useCollection<Member>(membersRef);
-
-    if (isLoadingBooks || isLoadingRentals || isLoadingMembers) {
-        return (
-          <div className="flex h-screen items-center justify-center">
-            <Loader2 className="h-10 w-10 animate-spin text-primary" />
-          </div>
-        );
-    }
 
     const addBook = (book: Omit<Book, 'id' | 'imageHint' | 'description' | 'status' | 'reservedBy' | 'dueDate'> & { description?: string, coverImage: string }) => {
         if (!booksRef) return;
@@ -132,6 +128,104 @@ const BooksProvider = ({ children }: { children: ReactNode }) => {
         await batch.commit();
     };
 
+    const seedInitialData = async () => {
+        if (!firestore || !auth) {
+            toast({ variant: 'destructive', title: '오류', description: 'Firebase가 준비되지 않았습니다.' });
+            return;
+        }
+    
+        const lockRef = doc(firestore, 'internal/locks/seeding');
+        try {
+            const lockSnap = await getDoc(lockRef);
+            if (lockSnap.exists()) {
+                toast({ title: '안내', description: '초기 데이터가 이미 설정되어 있습니다.' });
+                return;
+            }
+    
+            toast({ title: '초기 데이터 설정 시작', description: '도서 및 회원 정보를 데이터베이스에 생성합니다. 잠시 기다려주세요...' });
+    
+            const batch = writeBatch(firestore);
+    
+            // Seed Books
+            const booksCollectionRef = collection(firestore, 'books');
+            const booksSnapshot = await getDocs(booksCollectionRef);
+            if (booksSnapshot.empty) {
+                mockBooks.forEach(book => {
+                    const bookRef = doc(collection(firestore, 'books'));
+                    batch.set(bookRef, book);
+                });
+            }
+    
+            // Seed Members
+            const membersCollectionRef = collection(firestore, 'members');
+            const membersSnapshot = await getDocs(membersCollectionRef);
+            if (membersSnapshot.empty) {
+                const currentUser = auth.currentUser;
+                if (!currentUser || !currentUser.email) {
+                    toast({ variant: 'destructive', title: '오류', description: '현재 로그인 정보를 확인할 수 없습니다. 다시 로그인 후 시도해주세요.' });
+                    return;
+                }
+                const currentUserEmail = currentUser.email;
+                const currentUserPassword = prompt('데이터 생성을 위해 현재 관리자 계정의 비밀번호를 입력해주세요.');
+
+                if (!currentUserPassword) {
+                    toast({ variant: 'destructive', title: '취소됨', description: '비밀번호 입력이 취소되었습니다.' });
+                    return;
+                }
+
+                for (const member of initialMockMembers) {
+                    try {
+                        // Create user in Auth
+                        const userCredential = await createUserWithEmailAndPassword(auth, member.email, '123456');
+                        const user = userCredential.user;
+    
+                        // Add member doc to Firestore batch
+                        const memberRef = doc(firestore, 'members', user.uid);
+                        batch.set(memberRef, {
+                            id: user.uid,
+                            name: member.name,
+                            email: member.email,
+                            role: member.role || 'member'
+                        });
+                    } catch (error: any) {
+                        if (error.code === 'auth/email-already-in-use') {
+                            console.log(`Member ${member.email} already exists in Auth. Skipping Auth creation.`);
+                             const q = query(membersCollectionRef, where("email", "==", member.email));
+                             const existingMemberSnap = await getDocs(q);
+                             if(existingMemberSnap.empty){
+                                console.error(`Auth user ${member.email} exists, but no Firestore record found. This should not happen.`);
+                             }
+                        } else {
+                            console.error(`Failed to create member ${member.email}:`, error);
+                            toast({ variant: 'destructive', title: '오류', description: `${member.email} 계정 생성에 실패했습니다: ${error.message}` });
+                        }
+                    }
+                }
+                // After loop, sign back in as admin
+                await signInWithEmailAndPassword(auth, currentUserEmail, currentUserPassword);
+
+            }
+    
+            // Set the lock
+            batch.set(lockRef, { completedAt: serverTimestamp() });
+            
+            await batch.commit();
+            toast({ title: '초기 데이터 설정 완료', description: '모든 도서와 회원 정보가 성공적으로 생성되었습니다.' });
+    
+        } catch (error: any) {
+            console.error("Error seeding initial data:", error);
+            toast({ variant: 'destructive', title: '데이터 생성 오류', description: `초기 데이터 설정 중 문제가 발생했습니다: ${error.message}` });
+        }
+    };
+
+    if (isLoadingBooks || isLoadingRentals || isLoadingMembers) {
+        return (
+          <div className="flex h-screen items-center justify-center">
+            <Loader2 className="h-10 w-10 animate-spin text-primary" />
+          </div>
+        );
+    }
+
     const rentalsWithDateFix = rentals?.map(r => ({
         ...r,
         rentalDate: r.rentalDate && (r.rentalDate as unknown as Timestamp).toDate().toISOString(),
@@ -139,7 +233,7 @@ const BooksProvider = ({ children }: { children: ReactNode }) => {
     })) || [];
 
     return (
-        <BooksContext.Provider value={{ books: books || [], addBook, updateBook, deleteBook, rentals: rentalsWithDateFix, addRental, endRental, members: members || [] }}>
+        <BooksContext.Provider value={{ books: books || [], addBook, updateBook, deleteBook, rentals: rentalsWithDateFix, addRental, endRental, members: members || [], seedInitialData }}>
             {children}
         </BooksContext.Provider>
     );
@@ -213,67 +307,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     syncAndVerifyUser();
 
   }, [firebaseUser, isUserLoading, router, firestore, toast]);
-
-  // One-time data seeding logic for admin
-  useEffect(() => {
-    if (authContext?.user?.role !== 'admin' || !firestore) {
-      return;
-    }
-
-    const seedInitialData = async () => {
-        const lockRef = doc(firestore, 'internal/locks/seeding');
-        try {
-            const lockSnap = await getDoc(lockRef);
-            if (lockSnap.exists()) {
-                console.log("초기 데이터가 이미 설정되었습니다. 건너뜁니다.");
-                return;
-            }
-
-            toast({ title: '초기 데이터 설정 시작', description: '도서 및 회원 정보를 데이터베이스에 생성합니다.' });
-
-            const batch = writeBatch(firestore);
-
-            // Seed Books
-            const booksCollectionRef = collection(firestore, 'books');
-            const booksSnapshot = await getDocs(booksCollectionRef);
-            if (booksSnapshot.empty) {
-                mockBooks.forEach(book => {
-                    const bookRef = doc(collection(firestore, 'books'));
-                    batch.set(bookRef, book);
-                });
-            }
-
-            // Seed Members (if you still want to pre-populate them in DB for reference)
-            const membersCollectionRef = collection(firestore, 'members');
-            const membersSnapshot = await getDocs(membersCollectionRef);
-            if (membersSnapshot.empty) {
-                // Note: This does not create Auth users, only Firestore member records.
-                // Auth users are created on first login.
-                 initialMockMembers.forEach(member => {
-                    // We can't know the UID in advance, so we use email as ID here,
-                    // but the login flow will create the correct doc with UID as ID.
-                    // This is for reference/listing purposes.
-                    const memberRef = doc(firestore, 'members', member.email);
-                    batch.set(memberRef, member);
-                 });
-            }
-
-            // Set the lock
-            batch.set(lockRef, { completedAt: serverTimestamp() });
-            
-            await batch.commit();
-            toast({ title: '초기 데이터 설정 완료' });
-
-        } catch (error) {
-            console.error("Error seeding initial data:", error);
-            toast({ variant: 'destructive', title: '데이터 생성 오류', description: '초기 데이터 설정 중 문제가 발생했습니다.' });
-        }
-    };
-
-    seedInitialData();
-
-  }, [authContext, firestore, toast]);
-
 
   if (isUserLoading || isSyncing) {
     return (

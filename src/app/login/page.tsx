@@ -37,7 +37,7 @@ export default function LoginPage() {
     resolver: zodResolver(loginSchema),
     defaultValues: {
       email: '',
-      password: '123456',
+      password: '',
     },
   });
 
@@ -48,47 +48,26 @@ export default function LoginPage() {
       setIsSubmitting(false);
       return;
     }
-  
+
     try {
-      // 1. First, try to sign in
       await signInWithEmailAndPassword(auth, data.email, data.password);
       toast({
         title: '로그인 성공',
         description: `환영합니다, ${data.email}!`,
       });
       // On successful login, the useEffect will redirect to /dashboard
-  
     } catch (error) {
       const authError = error as AuthError;
-  
-      // 2. If user does not exist, create a new account
-      if (authError.code === 'auth/invalid-credential' || authError.code === 'auth/user-not-found') {
-        try {
-          await createUserWithEmailAndPassword(auth, data.email, data.password);
-          toast({
-            title: '계정 생성 완료',
-            description: '계정이 성공적으로 생성되었습니다. 다시 로그인해주세요.',
-          });
-          // Clear password field to prompt re-login
-          form.reset({ email: data.email, password: '' });
-
-        } catch (creationError) {
-          const creationAuthError = creationError as AuthError;
-          toast({
-            variant: 'destructive',
-            title: '가입 실패',
-            description: `계정 생성 중 오류가 발생했습니다: ${creationAuthError.message}`,
-          });
-        }
-      } else {
-        // 3. Handle other login errors
-        toast({
-          variant: 'destructive',
-          title: '로그인 오류',
-          description: authError.message || '알 수 없는 오류가 발생했습니다.',
-        });
-        console.error("Login error:", authError);
+      let description = '알 수 없는 오류가 발생했습니다.';
+      if (authError.code === 'auth/invalid-credential' || authError.code === 'auth/user-not-found' || authError.code === 'auth/wrong-password') {
+        description = '이메일 또는 비밀번호가 잘못되었습니다.';
       }
+      toast({
+        variant: 'destructive',
+        title: '로그인 오류',
+        description: description,
+      });
+      console.error("Login error:", authError);
     } finally {
       setIsSubmitting(false);
     }
@@ -122,7 +101,7 @@ export default function LoginPage() {
                   <FormItem>
                     <FormLabel>이메일</FormLabel>
                     <FormControl>
-                      <Input placeholder="name@example.com" {...field} disabled={isSubmitting}/>
+                      <Input placeholder="name@example.com" {...field} disabled={isSubmitting} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -135,7 +114,7 @@ export default function LoginPage() {
                   <FormItem>
                     <FormLabel>비밀번호</FormLabel>
                     <FormControl>
-                      <Input type="password" placeholder="••••••••" {...field} disabled={isSubmitting}/>
+                      <Input type="password" placeholder="••••••••" {...field} disabled={isSubmitting} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -143,7 +122,7 @@ export default function LoginPage() {
               />
               <Button type="submit" className="w-full" disabled={isSubmitting}>
                 {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                로그인 또는 가입
+                로그인
               </Button>
             </form>
           </Form>
