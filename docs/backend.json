@@ -1,0 +1,201 @@
+{
+  "entities": {
+    "Book": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Book",
+      "type": "object",
+      "description": "Represents a book in the library system.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the book."
+        },
+        "title": {
+          "type": "string",
+          "description": "Title of the book."
+        },
+        "author": {
+          "type": "string",
+          "description": "Author of the book."
+        },
+        "category": {
+          "type": "string",
+          "description": "Category of the book (e.g., Fiction, Non-fiction, Sci-Fi)."
+        },
+        "field": {
+          "type": "string",
+          "description": "Field of the book (e.g., Science, History, Art)."
+        },
+        "status": {
+          "type": "string",
+          "description": "Current status of the book (available, reserved, borrowed)."
+        }
+      },
+      "required": [
+        "id",
+        "title",
+        "author",
+        "category",
+        "status"
+      ]
+    },
+    "Member": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Member",
+      "type": "object",
+      "description": "Represents a member of the library system.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the member."
+        },
+        "email": {
+          "type": "string",
+          "description": "Email address of the member.",
+          "format": "email"
+        }
+      },
+      "required": [
+        "id",
+        "email"
+      ]
+    },
+    "Rental": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Rental",
+      "type": "object",
+      "description": "Represents a book rental record.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the rental record."
+        },
+        "memberId": {
+          "type": "string",
+          "description": "Reference to Member. (Relationship: Member 1:N Rental)"
+        },
+        "bookId": {
+          "type": "string",
+          "description": "Reference to Book. (Relationship: Book 1:N Rental)"
+        },
+        "rentalDate": {
+          "type": "string",
+          "description": "Date when the book was rented.",
+          "format": "date-time"
+        },
+        "returnDate": {
+          "type": "string",
+          "description": "Date when the book was returned.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "memberId",
+        "bookId",
+        "rentalDate"
+      ]
+    },
+    "Login": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Login",
+      "type": "object",
+      "description": "Represents login information for a member.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the login record."
+        },
+        "memberId": {
+          "type": "string",
+          "description": "Reference to Member. (Relationship: Member 1:1 Login)"
+        },
+        "lastLogin": {
+          "type": "string",
+          "description": "Last login timestamp",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "memberId",
+        "lastLogin"
+      ]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/books/{bookId}",
+        "definition": {
+          "entityName": "Book",
+          "schema": {
+            "$ref": "#/backend/entities/Book"
+          },
+          "description": "Stores book information. No denormalized authorization fields required as book access is public to all authenticated users.",
+          "params": [
+            {
+              "name": "bookId",
+              "description": "The unique identifier for the book."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/members/{memberId}",
+        "definition": {
+          "entityName": "Member",
+          "schema": {
+            "$ref": "#/backend/entities/Member"
+          },
+          "description": "Stores member information. The memberId matches the Firebase Auth UID for secure access.",
+          "params": [
+            {
+              "name": "memberId",
+              "description": "The unique identifier for the member, matching the Firebase Auth UID."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/rentals/{rentalId}",
+        "definition": {
+          "entityName": "Rental",
+          "schema": {
+            "$ref": "#/backend/entities/Rental"
+          },
+          "description": "Stores rental records, linking members and books.",
+          "params": [
+            {
+              "name": "rentalId",
+              "description": "The unique identifier for the rental record."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/logins/{loginId}",
+        "definition": {
+          "entityName": "Login",
+          "schema": {
+            "$ref": "#/backend/entities/Login"
+          },
+          "description": "Stores login information for members, enabling persistent login functionality.",
+          "params": [
+            {
+              "name": "loginId",
+              "description": "The unique identifier for the login record."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "The Firestore data structure is designed to support the BookBridge application's requirements for managing books, members, rentals, and login information. It prioritizes security, scalability, and ease of debugging, adhering to the core design principles of Authorization Independence, Clarity of Intent, DBAC (Database-Based Access Control), and QAPs (Rules are not Filters).\n\n**Authorization Independence:**\n\n*   There is no hierarchical authorization. All authorization can be determined directly from the document and the `request.auth.uid`.\n\n**Structural Segregation:**\n\n*   Each collection is designed to hold documents of the same security posture.\n\n**Access Modeling:**\n\n*   **Members:** Members are stored in `/members/{memberId}`. Authentication relies on Firebase Authentication, with user IDs (`uid`) mapped to member IDs in this collection.\n*   **Books:** Books are stored in a top-level `/books/{bookId}` collection, allowing easy querying and management. Access to book data will be controlled by security rules that can check the user's authentication status.\n*   **Rentals:** Rentals are stored in `/rentals/{rentalId}`. Each rental record includes `memberId` and `bookId` to link to the respective documents.\n*   **Logins:** Login information is stored in `/logins/{loginId}`. Each login record includes `memberId` to link to the respective member.\n\n**QAPs (Rules are not Filters):**\n\n*   The top-level `/books` collection allows listing all books, and security rules can ensure that only authenticated users can access book data.\n\n\nThis structure supports the application's core features:\n\n*   **Book Management:** The `/books` collection facilitates adding, deleting, and modifying book information.\n*   **Member Management:** The `/members` collection facilitates registering, deleting, and modifying member information.\n*   **Book Status Tracking:** The `status` field in the `Book` entity enables tracking the status of each book.\n*   **Book Search:** Firestore's querying capabilities can be used to search for books by category, title, author, or field within the `/books` collection.\n*   **Email Login and Persistent Login:** Firebase Authentication with email/password provider is used for email login, and login information can be tracked in the `/logins` collection for persistent login.\n*   **Rental History Report:** Rental history can be generated by querying the `/rentals` collection and grouping records by member and time period. This could be exported and analyzed in Cloud SQL, as requested."
+  }
+}

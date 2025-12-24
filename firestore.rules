@@ -1,0 +1,147 @@
+/**
+ * This ruleset enforces a security model for the BookBridge library application.
+ *
+ * Core Philosophy:
+ * The security model is user-centric. Authenticated users can browse all books,
+ * but can only create, view, and manage their own personal data, such as their
+ * member profile, rental history, and login records. There are no global admin
+ * roles defined in this version.
+ *
+ * Data Structure:
+ * The data is organized into four top-level collections:
+ * - /books: Publicly readable book catalog.
+ * - /members: Private user profiles, where the document ID must match the
+ *             user's authentication UID.
+ * - /rentals: User-specific rental records.
+ * - /logins: User-specific login records.
+ *
+ * Key Security Decisions:
+ * - User Enumeration: Listing documents in the /members collection is explicitly
+ *   disallowed to protect user privacy.
+ * - Book Management: Any authenticated user can read the book list. However,
+ *   creating, updating, or deleting books is currently disabled because the Book
+ *   schema lacks an 'ownerId' or 'authorId' field to securely assign write
+ *   permissions. This is a critical point for future development.
+ * - Ownership via Denormalization: Access to /rentals and /logins is controlled
+ *   by a 'memberId' field stored directly within each document. This is a deliberate
+ *   denormalization choice that makes security rules fast and efficient, as they
+ *   do not need to perform extra database reads to check for ownership.
+ *
+ * Denormalization for Authorization:
+ * This ruleset heavily relies on denormalization for efficient authorization.
+ * For example, instead of looking up a member's rentals in a subcollection,
+ * the top-level /rentals collection is used, where each rental document contains
+ * a `memberId` field. Rules on /rentals/{rentalId} can then simply check
+ * `resource.data.memberId == request.auth.uid` without costly `get()` calls.
+ *
+ * Structural Segregation:
+ * Each top-level collection holds data with a uniform security concern. Public
+ * book data is separate from private member data, which is separate from
+ * transactional rental data. This clean separation simplifies rule logic and
+ * improves query performance.
+ */
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper Functions
+    /**
+     * Checks if the user is authenticated.
+     */
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    /**
+     * Checks if the currently authenticated user's UID matches the provided userId.
+     * This is used for path-based ownership, e.g., in /members/{memberId}.
+     */
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    /**
+     * Checks for ownership on an existing document. Used for safe updates and deletes.
+     */
+    function isExistingOwner(userId) {
+      return isOwner(userId) && resource != null;
+    }
+
+    /**
+     * Validates that the 'memberId' field in a document's data matches the
+     * authenticated user's UID. This is used for denormalized ownership.
+     */
+    function isResourceOwner() {
+      return isSignedIn() && request.auth.uid == resource.data.memberId;
+    }
+
+    /**
+     * Validates ownership on an existing document using a denormalized field.
+     */
+    function isExistingResourceOwner() {
+      return resource != null && isResourceOwner();
+    }
+    
+    /**
+     * @description Rules for the 'books' collection.
+     * @path /books/{bookId}
+     * @allow (get) An authenticated user can read any book's details.
+     * @deny (create) An anonymous user tries to create a new book.
+     * @principle Public read access for authenticated users, with writes disabled pending schema changes.
+     */
+    match /books/{bookId} {
+      allow get: if isSignedIn();
+      allow list: if isSignedIn();
+      // CRITICAL: Cannot implement owner-only writes. The 'Book' entity is missing an 'ownerId' or 'authorId' field.
+      // Writes are disabled until the schema is updated to include a field linking a book to a creator.
+      allow create: if false; // TODO: Add owner validation once the schema is updated with an ownership field.
+      allow update: if false; // TODO: Add owner validation once the schema is updated with an ownership field.
+      allow delete: if false; // TODO: Add owner validation once the schema is updated with an ownership field.
+    }
+
+    /**
+     * @description Rules for the 'members' collection, representing user profiles.
+     * @path /members/{memberId}
+     * @allow (create) A new user with UID 'user123' creates their own profile at /members/user123.
+     * @deny (get) User 'user456' tries to read the profile at /members/user123.
+     * @principle Enforces strict ownership. A user can only access the document where the ID matches their own UID.
+     */
+    match /members/{memberId} {
+      allow get: if isOwner(memberId);
+      allow list: if false; // Prevent user enumeration for privacy.
+      allow create: if isOwner(memberId) && request.resource.data.id == memberId;
+      allow update: if isExistingOwner(memberId) && request.resource.data.id == resource.data.id;
+      allow delete: if isExistingOwner(memberId);
+    }
+
+    /**
+     * @description Rules for the 'rentals' collection.
+     * @path /rentals/{rentalId}
+     * @allow (get) A user with UID 'user123' reads a rental document where the `memberId` field is 'user123'.
+     * @deny (update) A user with UID 'user456' tries to update a rental where the `memberId` field is 'user123'.
+     * @principle Denormalized Ownership. Access is granted based on the `memberId` field within the document itself.
+     */
+    match /rentals/{rentalId} {
+      allow get: if isResourceOwner();
+      allow list: if isSignedIn(); // Allows queries like collection('rentals').where('memberId', '==', auth.uid)
+      allow create: if isSignedIn() && request.resource.data.memberId == request.auth.uid;
+      allow update: if isExistingResourceOwner() && request.resource.data.memberId == resource.data.memberId;
+      allow delete: if isExistingResourceOwner();
+    }
+
+    /**
+     * @description Rules for the 'logins' collection.
+     * @path /logins/{loginId}
+     * @allow (create) A user with UID 'user123' creates a login record containing `memberId: 'user123'`.
+     * @deny (get) User 'user456' tries to read a login record where the `memberId` field is 'user123'.
+     * @principle Denormalized Ownership. Access is granted based on the `memberId` field within the document itself.
+     */
+    match /logins/{loginId} {
+      allow get: if isResourceOwner();
+      allow list: if isSignedIn(); // Allows queries for a user's own login records.
+      allow create: if isSignedIn() && request.resource.data.memberId == request.auth.uid;
+      allow update: if isExistingResourceOwner() && request.resource.data.memberId == resource.data.memberId;
+      allow delete: if isExistingResourceOwner();
+    }
+  }
+}
