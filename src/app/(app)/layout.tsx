@@ -17,10 +17,11 @@ import { MainNav } from '@/components/main-nav';
 import { Logo } from '@/components/logo';
 import { initialMockMembers } from '@/lib/data';
 import type { Book, Rental, Member } from '@/lib/types';
-import { FirebaseClientProvider, useFirebase, useCollection, useDoc, useMemoFirebase } from '@/firebase';
+import { FirebaseClientProvider, useFirebase, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, doc, writeBatch, serverTimestamp, query, where, getDocs, Timestamp, getDoc, setDoc } from 'firebase/firestore';
 import { addDocumentNonBlocking, deleteDocumentNonBlocking, setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
-
+import { createUserWithEmailAndPassword } from 'firebase/auth';
+import { useToast } from '@/hooks/use-toast';
 
 type UserRole = 'admin' | 'member';
 
@@ -53,6 +54,7 @@ interface BooksContextType {
     addRental: (rental: Omit<Rental, 'id'>) => void;
     endRental: (bookId: string) => void;
     members: Member[];
+    seedInitialData: () => Promise<void>;
 }
 
 const BooksContext = createContext<BooksContextType | null>(null);
@@ -66,7 +68,8 @@ export function useBooks() {
 }
 
 const BooksProvider = ({ children }: { children: ReactNode }) => {
-    const { firestore, user } = useFirebase();
+    const { firestore, auth } = useFirebase();
+    const { toast } = useToast();
 
     const booksRef = useMemoFirebase(() => firestore ? collection(firestore, 'books') : null, [firestore]);
     const { data: books, isLoading: isLoadingBooks } = useCollection<Book>(booksRef);
@@ -77,6 +80,63 @@ const BooksProvider = ({ children }: { children: ReactNode }) => {
     const membersRef = useMemoFirebase(() => firestore ? collection(firestore, 'members') : null, [firestore]);
     const { data: members, isLoading: isLoadingMembers } = useCollection<Member>(membersRef);
     
+    const seedInitialData = async () => {
+        if (!firestore || !auth) {
+          toast({ variant: 'destructive', title: '오류', description: 'Firebase가 초기화되지 않았습니다.' });
+          return;
+        }
+    
+        toast({ title: '시작', description: '초기 데이터 생성을 시작합니다...' });
+    
+        try {
+          // 1. Check if members collection is empty
+          const membersSnapshot = await getDocs(membersRef);
+          if (!membersSnapshot.empty) {
+            toast({ title: '알림', description: '이미 회원 데이터가 존재합니다. 초기화를 건너뜁니다.' });
+            return;
+          }
+    
+          // 2. Create users in Auth and Firestore
+          for (const member of initialMockMembers) {
+            try {
+              // Create user in Firebase Authentication
+              const userCredential = await createUserWithEmailAndPassword(auth, member.email, '123456');
+              const user = userCredential.user;
+    
+              // Create user document in Firestore
+              const memberData: Member = {
+                id: user.uid,
+                email: member.email,
+                name: member.name,
+                role: member.role || 'member',
+              };
+              await setDoc(doc(firestore, 'members', user.uid), memberData);
+               toast({ title: '회원 생성', description: `${member.name} (${member.email}) 님을 등록했습니다.` });
+            } catch (error: any) {
+              if (error.code === 'auth/email-already-in-use') {
+                 toast({ variant: 'destructive', title: '경고', description: `${member.email}는 이미 인증 시스템에 존재합니다. Firestore 문서만 확인합니다.` });
+                 // If auth user exists, ensure firestore doc exists
+                 const q = query(collection(firestore, "members"), where("email", "==", member.email));
+                 const querySnapshot = await getDocs(q);
+                 if (querySnapshot.empty) {
+                    // This case is unlikely if seeding is done correctly, but as a fallback
+                    console.warn(`Auth user for ${member.email} exists, but no firestore doc. A new doc could be created here if needed.`);
+                 }
+              } else {
+                console.error(`Error creating user ${member.email}:`, error);
+                toast({ variant: 'destructive', title: '오류', description: `${member.email} 생성 중 오류: ${error.message}` });
+              }
+            }
+          }
+          
+          toast({ title: '완료', description: '모든 초기 회원이 성공적으로 생성되었습니다.' });
+    
+        } catch (error: any) {
+          console.error('Error seeding data:', error);
+          toast({ variant: 'destructive', title: '심각한 오류', description: `초기 데이터 생성 중 오류 발생: ${error.message}` });
+        }
+    };
+
     if (isLoadingBooks || isLoadingRentals || isLoadingMembers) {
         return (
           <div className="flex h-screen items-center justify-center">
@@ -139,7 +199,7 @@ const BooksProvider = ({ children }: { children: ReactNode }) => {
     })) || [];
 
     return (
-        <BooksContext.Provider value={{ books: books || [], addBook, updateBook, deleteBook, rentals: rentalsWithDateFix, addRental, endRental, members: members || [] }}>
+        <BooksContext.Provider value={{ books: books || [], addBook, updateBook, deleteBook, rentals: rentalsWithDateFix, addRental, endRental, members: members || [], seedInitialData }}>
             {children}
         </BooksContext.Provider>
     );
@@ -147,68 +207,89 @@ const BooksProvider = ({ children }: { children: ReactNode }) => {
 
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
-  const { user, isUserLoading, firestore } = useFirebase();
+  const { user: firebaseUser, isUserLoading, firestore } = useFirebase();
   const router = useRouter();
   const [authContext, setAuthContext] = useState<AuthContextType>({ user: null, isVerified: false });
   const [isDataSyncing, setIsDataSyncing] = useState(true);
 
   const memberDocRef = useMemoFirebase(() => {
-      if (!user || !firestore) return null;
-      return doc(firestore, 'members', user.uid);
-  }, [user, firestore]);
-  const { data: memberData, isLoading: isMemberDataLoading } = useDoc<Member>(memberDocRef);
+      if (!firebaseUser || !firestore) return null;
+      return doc(firestore, 'members', firebaseUser.uid);
+  }, [firebaseUser, firestore]);
+
+  const { data: memberData, isLoading: isMemberDataLoading } = useCollection<Member>(
+      useMemoFirebase(() => {
+          if (!firebaseUser) return null;
+          return query(collection(firestore, 'members'), where('email', '==', firebaseUser.email));
+      }, [firestore, firebaseUser])
+  );
 
   useEffect(() => {
     if (isUserLoading) return;
 
-    if (!user) {
+    if (!firebaseUser) {
       router.replace('/login');
       setIsDataSyncing(false);
       return;
     }
 
     const syncMemberData = async () => {
-      if (user && firestore && !isMemberDataLoading) {
-        if (!memberData) {
-          // Member data doesn't exist in Firestore, let's create it.
-          const mockUser = initialMockMembers.find(m => m.email.toLowerCase() === user.email?.toLowerCase());
+      if (firebaseUser && firestore && !isMemberDataLoading) {
+        if (!memberData || memberData.length === 0) {
+          const mockUser = initialMockMembers.find(m => m.email.toLowerCase() === firebaseUser.email?.toLowerCase());
 
           if (mockUser) {
             const newMemberData: Member = {
-              id: user.uid,
+              id: firebaseUser.uid,
               email: mockUser.email,
               name: mockUser.name,
               role: mockUser.role || 'member',
             };
             try {
-              await setDoc(doc(firestore, 'members', user.uid), newMemberData);
-              // The useDoc hook will automatically update with the new data.
+              await setDoc(doc(firestore, 'members', firebaseUser.uid), newMemberData);
             } catch (error) {
               console.error("Error creating member document:", error);
             }
           }
         }
         
-        if (memberData) {
+        if (memberData && memberData.length > 0) {
+            const currentMember = memberData[0];
             setAuthContext({
               user: {
-                uid: user.uid,
-                email: user.email || '',
-                role: memberData.role || 'member',
-                name: memberData.name,
+                uid: firebaseUser.uid,
+                email: firebaseUser.email || '',
+                role: currentMember.role || 'member',
+                name: currentMember.name,
               },
               isVerified: true,
             });
+        } else if (!memberData) {
+            // This handles the case where the memberData isn't loaded yet, but also the case for new users
+            // Let's assume if there's no data, we can create a temporary context and it will get updated
+             const mockUser = initialMockMembers.find(m => m.email.toLowerCase() === firebaseUser.email?.toLowerCase());
+             if (mockUser) {
+                 setAuthContext({
+                     user: {
+                         uid: firebaseUser.uid,
+                         email: firebaseUser.email,
+                         role: mockUser.role || 'member',
+                         name: mockUser.name
+                     },
+                     isVerified: true
+                 });
+             }
         }
+
         setIsDataSyncing(false);
       }
     };
 
     syncMemberData();
 
-  }, [user, isUserLoading, router, firestore, memberData, isMemberDataLoading]);
+  }, [firebaseUser, isUserLoading, router, firestore, memberData, isMemberDataLoading]);
 
-  if (isUserLoading || isDataSyncing || !authContext.isVerified) {
+  if (isUserLoading || isDataSyncing) {
     return (
       <div className="flex h-screen items-center justify-center">
         <Loader2 className="h-10 w-10 animate-spin text-primary" />
@@ -216,6 +297,16 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       </div>
     );
   }
+  
+  if (!authContext.isVerified && !isUserLoading) {
+    return (
+        <div className="flex h-screen items-center justify-center">
+             <Loader2 className="h-10 w-10 animate-spin text-primary" />
+             <p className="ml-4">인증 정보를 확인 중입니다...</p>
+        </div>
+    );
+  }
+
 
   return (
     <AuthContext.Provider value={authContext}>

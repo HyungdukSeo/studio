@@ -55,37 +55,27 @@ export default function LoginPage() {
           title: '로그인 성공',
           description: `환영합니다, ${data.email}!`,
         });
-        // The useEffect will handle the redirect
     } catch (error: any) {
         if (error.code === AuthErrorCodes.INVALID_CREDENTIAL) {
             // User does not exist, try to create one with the default password.
-            if (data.password === '123456') {
-                try {
-                    await createUserWithEmailAndPassword(auth, data.email, data.password);
-                    toast({
-                      title: '계정 생성 및 로그인 성공',
-                      description: `환영합니다, ${data.email}!`,
-                    });
-                    // The useEffect will handle the redirect on auth state change
-                } catch (creationError: any) {
-                     toast({
-                        variant: 'destructive',
-                        title: '계정 생성 실패',
-                        description: '계정을 생성하는 중 오류가 발생했습니다: ' + creationError.message,
-                    });
-                }
-            } else {
+            try {
+                await createUserWithEmailAndPassword(auth, data.email, data.password);
+                toast({
+                  title: '계정 생성 및 로그인 성공',
+                  description: `환영합니다, ${data.email}! 이제 앱 레이아웃에서 Firestore 정보가 생성됩니다.`,
+                });
+            } catch (creationError: any) {
                  toast({
                     variant: 'destructive',
-                    title: '로그인 실패',
-                    description: '이메일 또는 비밀번호가 올바르지 않습니다.',
+                    title: '로그인/가입 실패',
+                    description: '이메일 또는 비밀번호를 확인해주세요. ' + creationError.message,
                 });
             }
         } else {
             toast({
                 variant: 'destructive',
                 title: '로그인 오류',
-                description: '알 수 없는 오류가 발생했습니다. 잠시 후 다시 시도해주세요.',
+                description: '알 수 없는 오류가 발생했습니다: ' + error.message,
             });
             console.error(error);
         }
