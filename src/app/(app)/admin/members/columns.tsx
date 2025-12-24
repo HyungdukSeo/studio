@@ -47,10 +47,6 @@ export const columns: ColumnDef<Member>[] = [
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuLabel>작업</DropdownMenuLabel>
-              <DropdownMenuItem onClick={() => navigator.clipboard.writeText(member.id)}>
-                회원 ID 복사
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
               <DropdownMenuItem>회원 수정</DropdownMenuItem>
               <DropdownMenuItem className="text-destructive focus:bg-destructive/10 focus:text-destructive">회원 삭제</DropdownMenuItem>
             </DropdownMenuContent>

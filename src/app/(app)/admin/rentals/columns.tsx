@@ -24,9 +24,6 @@ type ColumnsOptions = {
 };
 
 export const columns = ({ onApproveLoan, onExtendDueDate, onConfirmReturn }: ColumnsOptions): ColumnDef<RentalInfo>[] => {
-  const { user } = useAuth();
-  const isAdmin = user?.role === 'admin';
-
   const baseColumns: ColumnDef<RentalInfo>[] = [
     {
       accessorKey: 'memberName',
@@ -61,48 +58,53 @@ export const columns = ({ onApproveLoan, onExtendDueDate, onConfirmReturn }: Col
       },
     },
   ];
-
-  if (isAdmin) {
-    baseColumns.push({
-      id: 'actions',
-      header: '관리',
-      cell: function ActionsCell({ row }) {
-        const book = row.original;
-        
-        return (
-          <div className="text-center space-x-2">
-            {book.status === 'reserved' && (
+  
+  baseColumns.push({
+    id: 'actions',
+    header: '관리',
+    cell: function ActionsCell({ row }) {
+      const book = row.original;
+      const { user } = useAuth();
+      const isAdmin = user?.role === 'admin';
+      
+      if (!isAdmin) {
+        return null;
+      }
+      
+      return (
+        <div className="text-center space-x-2">
+          {book.status === 'reserved' && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onApproveLoan(book)}
+            >
+              대여 승인
+            </Button>
+          )}
+           {book.status === 'borrowed' && (
+            <>
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => onApproveLoan(book)}
+                onClick={() => onExtendDueDate(book)}
               >
-                대여 승인
+                연장하기
               </Button>
-            )}
-             {book.status === 'borrowed' && (
-              <>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => onExtendDueDate(book)}
-                >
-                  연장하기
-                </Button>
-                <Button
-                  variant="default"
-                  size="sm"
-                  onClick={() => onConfirmReturn(book)}
-                >
-                  반납 확인
-                </Button>
-              </>
-            )}
-          </div>
-        );
-      },
-    });
-  }
+              <Button
+                variant="default"
+                size="sm"
+                onClick={() => onConfirmReturn(book)}
+              >
+                반납 확인
+              </Button>
+            </>
+          )}
+        </div>
+      );
+    },
+  });
+
 
   return baseColumns;
 };
