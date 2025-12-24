@@ -57,7 +57,7 @@ export default function LoginPage() {
         await signInWithEmailAndPassword(auth, data.email, data.password);
         loginSuccess(data.email);
     } catch (error: any) {
-        if (error.code === AuthErrorCodes.INVALID_PASSWORD || error.code === AuthErrorCodes.USER_NOT_FOUND) {
+        if (error.code === AuthErrorCodes.INVALID_CREDENTIAL || error.code === AuthErrorCodes.USER_NOT_FOUND) {
             // 사용자가 없거나 비밀번호가 틀린 경우, 첫 로그인 시도를 확인
              try {
                 const memberInfo = mockMembers.find(m => m.email === data.email);
@@ -66,13 +66,12 @@ export default function LoginPage() {
                 if ((memberInfo || isAdmin) && data.password === DEFAULT_PASSWORD) {
                     // 기본 비밀번호로 가입 시도
                     const userCredential = await createUserWithEmailAndPassword(auth, data.email, data.password);
-                    
+                    const memberRef = doc(firestore, "members", userCredential.user.uid);
+
                     if (isAdmin) {
-                        const adminRef = doc(firestore, "members", userCredential.user.uid);
-                        await setDoc(adminRef, { id: userCredential.user.uid, email: data.email, name: '관리자', role: 'admin' });
+                        await setDoc(memberRef, { id: userCredential.user.uid, email: data.email, name: '관리자', role: 'admin' });
                     } else if (memberInfo) {
-                        const memberRef = doc(firestore, "members", userCredential.user.uid);
-                        await setDoc(memberRef, { ...memberInfo, id: userCredential.user.uid });
+                        await setDoc(memberRef, { ...memberInfo, id: userCredential.user.uid, role: 'member' });
                     }
                     
                     loginSuccess(data.email);
@@ -84,11 +83,19 @@ export default function LoginPage() {
                     });
                 }
             } catch (creationError: any) {
-                toast({
-                    variant: 'destructive',
-                    title: '오류',
-                    description: creationError.message,
-                });
+                if (creationError.code === AuthErrorCodes.EMAIL_EXISTS) {
+                    toast({
+                        variant: 'destructive',
+                        title: '로그인 실패',
+                        description: '비밀번호가 올바르지 않습니다.',
+                    });
+                } else {
+                    toast({
+                        variant: 'destructive',
+                        title: '오류',
+                        description: creationError.message,
+                    });
+                }
             }
         } else {
             toast({
