@@ -57,18 +57,17 @@ export default function LoginPage() {
         });
     } catch (error: any) {
         if (error.code === AuthErrorCodes.INVALID_CREDENTIAL) {
-            // User does not exist, try to create one with the default password.
             try {
                 await createUserWithEmailAndPassword(auth, data.email, data.password);
                 toast({
                   title: '계정 생성 및 로그인 성공',
-                  description: `환영합니다, ${data.email}! 이제 앱 레이아웃에서 Firestore 정보가 생성됩니다.`,
+                  description: `새 계정이 생성되었습니다. 환영합니다, ${data.email}!`,
                 });
             } catch (creationError: any) {
                  toast({
                     variant: 'destructive',
-                    title: '로그인/가입 실패',
-                    description: '이메일 또는 비밀번호를 확인해주세요. ' + creationError.message,
+                    title: '가입 실패',
+                    description: '계정 생성에 실패했습니다: ' + creationError.message,
                 });
             }
         } else {
@@ -133,7 +132,7 @@ export default function LoginPage() {
               />
               <Button type="submit" className="w-full" disabled={isSubmitting}>
                 {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                로그인
+                로그인 또는 가입
               </Button>
             </form>
           </Form>

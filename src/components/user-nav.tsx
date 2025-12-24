@@ -133,7 +133,7 @@ export function UserNav() {
              {isAdmin && (
                 <DropdownMenuItem onClick={seedInitialData}>
                     <Database className="mr-2 h-4 w-4" />
-                    <span>초기 데이터 설정</span>
+                    <span>초기 도서 설정</span>
                 </DropdownMenuItem>
              )}
           </DropdownMenuGroup>

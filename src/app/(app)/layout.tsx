@@ -15,12 +15,11 @@ import {
 import { UserNav } from '@/components/user-nav';
 import { MainNav } from '@/components/main-nav';
 import { Logo } from '@/components/logo';
-import { initialMockMembers } from '@/lib/data';
+import { initialMockMembers, mockBooks } from '@/lib/data';
 import type { Book, Rental, Member } from '@/lib/types';
 import { FirebaseClientProvider, useFirebase, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, doc, writeBatch, serverTimestamp, query, where, getDocs, Timestamp, getDoc, setDoc } from 'firebase/firestore';
 import { addDocumentNonBlocking, deleteDocumentNonBlocking, setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
-import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { useToast } from '@/hooks/use-toast';
 
 type UserRole = 'admin' | 'member';
@@ -81,56 +80,26 @@ const BooksProvider = ({ children }: { children: ReactNode }) => {
     const { data: members, isLoading: isLoadingMembers } = useCollection<Member>(membersRef);
     
     const seedInitialData = async () => {
-        if (!firestore || !auth) {
+        if (!firestore) {
           toast({ variant: 'destructive', title: '오류', description: 'Firebase가 초기화되지 않았습니다.' });
           return;
         }
     
-        toast({ title: '시작', description: '초기 데이터 생성을 시작합니다...' });
+        toast({ title: '시작', description: '초기 도서 데이터 생성을 시작합니다...' });
     
         try {
-          // 1. Check if members collection is empty
-          const membersSnapshot = await getDocs(membersRef);
-          if (!membersSnapshot.empty) {
-            toast({ title: '알림', description: '이미 회원 데이터가 존재합니다. 초기화를 건너뜁니다.' });
-            return;
+          const booksSnapshot = await getDocs(booksRef);
+          if (booksSnapshot.empty) {
+            const batch = writeBatch(firestore);
+            mockBooks.forEach((book) => {
+              const newBookRef = doc(collection(firestore, 'books'));
+              batch.set(newBookRef, book);
+            });
+            await batch.commit();
+            toast({ title: '성공', description: '초기 도서 데이터가 성공적으로 생성되었습니다.' });
+          } else {
+             toast({ title: '알림', description: '이미 도서 데이터가 존재합니다. 초기화를 건너뜁니다.' });
           }
-    
-          // 2. Create users in Auth and Firestore
-          for (const member of initialMockMembers) {
-            try {
-              // Create user in Firebase Authentication
-              const userCredential = await createUserWithEmailAndPassword(auth, member.email, '123456');
-              const user = userCredential.user;
-    
-              // Create user document in Firestore
-              const memberData: Member = {
-                id: user.uid,
-                email: member.email,
-                name: member.name,
-                role: member.role || 'member',
-              };
-              await setDoc(doc(firestore, 'members', user.uid), memberData);
-               toast({ title: '회원 생성', description: `${member.name} (${member.email}) 님을 등록했습니다.` });
-            } catch (error: any) {
-              if (error.code === 'auth/email-already-in-use') {
-                 toast({ variant: 'destructive', title: '경고', description: `${member.email}는 이미 인증 시스템에 존재합니다. Firestore 문서만 확인합니다.` });
-                 // If auth user exists, ensure firestore doc exists
-                 const q = query(collection(firestore, "members"), where("email", "==", member.email));
-                 const querySnapshot = await getDocs(q);
-                 if (querySnapshot.empty) {
-                    // This case is unlikely if seeding is done correctly, but as a fallback
-                    console.warn(`Auth user for ${member.email} exists, but no firestore doc. A new doc could be created here if needed.`);
-                 }
-              } else {
-                console.error(`Error creating user ${member.email}:`, error);
-                toast({ variant: 'destructive', title: '오류', description: `${member.email} 생성 중 오류: ${error.message}` });
-              }
-            }
-          }
-          
-          toast({ title: '완료', description: '모든 초기 회원이 성공적으로 생성되었습니다.' });
-    
         } catch (error: any) {
           console.error('Error seeding data:', error);
           toast({ variant: 'destructive', title: '심각한 오류', description: `초기 데이터 생성 중 오류 발생: ${error.message}` });
@@ -212,18 +181,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const [authContext, setAuthContext] = useState<AuthContextType>({ user: null, isVerified: false });
   const [isDataSyncing, setIsDataSyncing] = useState(true);
 
-  const memberDocRef = useMemoFirebase(() => {
-      if (!firebaseUser || !firestore) return null;
-      return doc(firestore, 'members', firebaseUser.uid);
-  }, [firebaseUser, firestore]);
-
-  const { data: memberData, isLoading: isMemberDataLoading } = useCollection<Member>(
-      useMemoFirebase(() => {
-          if (!firebaseUser) return null;
-          return query(collection(firestore, 'members'), where('email', '==', firebaseUser.email));
-      }, [firestore, firebaseUser])
-  );
-
   useEffect(() => {
     if (isUserLoading) return;
 
@@ -234,60 +191,49 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     }
 
     const syncMemberData = async () => {
-      if (firebaseUser && firestore && !isMemberDataLoading) {
-        if (!memberData || memberData.length === 0) {
-          const mockUser = initialMockMembers.find(m => m.email.toLowerCase() === firebaseUser.email?.toLowerCase());
+      if (!firestore) return;
+      setIsDataSyncing(true);
 
-          if (mockUser) {
-            const newMemberData: Member = {
-              id: firebaseUser.uid,
-              email: mockUser.email,
-              name: mockUser.name,
-              role: mockUser.role || 'member',
-            };
-            try {
-              await setDoc(doc(firestore, 'members', firebaseUser.uid), newMemberData);
-            } catch (error) {
-              console.error("Error creating member document:", error);
-            }
-          }
-        }
-        
-        if (memberData && memberData.length > 0) {
-            const currentMember = memberData[0];
-            setAuthContext({
-              user: {
-                uid: firebaseUser.uid,
-                email: firebaseUser.email || '',
-                role: currentMember.role || 'member',
-                name: currentMember.name,
-              },
-              isVerified: true,
-            });
-        } else if (!memberData) {
-            // This handles the case where the memberData isn't loaded yet, but also the case for new users
-            // Let's assume if there's no data, we can create a temporary context and it will get updated
-             const mockUser = initialMockMembers.find(m => m.email.toLowerCase() === firebaseUser.email?.toLowerCase());
-             if (mockUser) {
-                 setAuthContext({
-                     user: {
-                         uid: firebaseUser.uid,
-                         email: firebaseUser.email,
-                         role: mockUser.role || 'member',
-                         name: mockUser.name
-                     },
-                     isVerified: true
-                 });
-             }
-        }
+      const memberDocRef = doc(firestore, 'members', firebaseUser.uid);
+      const memberDocSnap = await getDoc(memberDocRef);
 
-        setIsDataSyncing(false);
+      let finalMemberData: Member;
+
+      if (!memberDocSnap.exists()) {
+        const mockUser = initialMockMembers.find(m => m.email.toLowerCase() === firebaseUser.email?.toLowerCase());
+        const newMemberData: Member = {
+          id: firebaseUser.uid,
+          email: firebaseUser.email!,
+          name: mockUser?.name || '새 사용자',
+          role: mockUser?.role || 'member',
+        };
+        try {
+          await setDoc(memberDocRef, newMemberData);
+          finalMemberData = newMemberData;
+        } catch (error) {
+          console.error("Error creating member document:", error);
+          setIsDataSyncing(false);
+          return;
+        }
+      } else {
+        finalMemberData = memberDocSnap.data() as Member;
       }
+      
+      setAuthContext({
+        user: {
+          uid: firebaseUser.uid,
+          email: finalMemberData.email,
+          role: finalMemberData.role || 'member',
+          name: finalMemberData.name,
+        },
+        isVerified: true,
+      });
+      setIsDataSyncing(false);
     };
 
     syncMemberData();
 
-  }, [firebaseUser, isUserLoading, router, firestore, memberData, isMemberDataLoading]);
+  }, [firebaseUser, isUserLoading, router, firestore]);
 
   if (isUserLoading || isDataSyncing) {
     return (
@@ -306,7 +252,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         </div>
     );
   }
-
 
   return (
     <AuthContext.Provider value={authContext}>
