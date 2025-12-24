@@ -17,7 +17,7 @@ import { LogOut, User, Lock } from 'lucide-react';
 import { useAuth } from '@/app/(app)/layout';
 import { useFirebase } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
-import { signOut, updatePassword } from 'firebase/auth';
+import { signOut, updatePassword, reauthenticateWithCredential, EmailAuthProvider } from 'firebase/auth';
 import {
   Dialog,
   DialogContent,
@@ -38,6 +38,7 @@ export function UserNav() {
   const { toast } = useToast();
   const [isPasswordDialogOpen, setIsPasswordDialogOpen] = useState(false);
   const [newPassword, setNewPassword] = useState('');
+  const [currentPassword, setCurrentPassword] = useState('');
 
   const handleLogout = async () => {
     if (!auth) return;
@@ -46,34 +47,53 @@ export function UserNav() {
   };
   
   const handlePasswordChange = async () => {
-    if (!firebaseUser) {
+    if (!firebaseUser || !firebaseUser.email) {
         toast({ variant: 'destructive', title: '오류', description: '사용자 정보가 없습니다.' });
         return;
     }
     
-    if (!newPassword || newPassword.length < 4) {
+    if (!newPassword || newPassword.length < 6) {
         toast({
             variant: 'destructive',
             title: '오류',
-            description: '새 비밀번호는 4자 이상이어야 합니다.',
+            description: '새 비밀번호는 6자 이상이어야 합니다.',
         });
         return;
     }
+    
+    if (!currentPassword) {
+      toast({
+          variant: 'destructive',
+          title: '오류',
+          description: '현재 비밀번호를 입력해주세요.',
+      });
+      return;
+    }
 
     try {
+        const credential = EmailAuthProvider.credential(firebaseUser.email, currentPassword);
+        await reauthenticateWithCredential(firebaseUser, credential);
         await updatePassword(firebaseUser, newPassword);
+
         toast({
             title: '성공',
             description: '비밀번호가 성공적으로 변경되었습니다.',
         });
         setIsPasswordDialogOpen(false);
         setNewPassword('');
+        setCurrentPassword('');
     } catch (error: any) {
         console.error("Password update error:", error);
+        let description = '비밀번호 변경에 실패했습니다. 잠시 후 다시 시도해주세요.';
+        if (error.code === 'auth/wrong-password') {
+          description = '현재 비밀번호가 올바르지 않습니다.';
+        } else if (error.code === 'auth/too-many-requests') {
+          description = '너무 많은 요청이 있었습니다. 잠시 후 다시 시도해주세요.';
+        }
         toast({
             variant: 'destructive',
             title: '비밀번호 변경 실패',
-            description: error.message,
+            description: description,
         });
     }
   };
@@ -94,7 +114,7 @@ export function UserNav() {
         <DropdownMenuContent className="w-56" align="end" forceMount>
           <DropdownMenuLabel className="font-normal">
             <div className="flex flex-col space-y-1">
-              <p className="text-sm font-medium leading-none">로그인 계정</p>
+              <p className="text-sm font-medium leading-none">{authContext.user?.name}</p>
               <p className="text-xs leading-none text-muted-foreground truncate">{authContext.user?.email}</p>
             </div>
           </DropdownMenuLabel>
@@ -122,10 +142,22 @@ export function UserNav() {
           <DialogHeader>
             <DialogTitle>비밀번호 변경</DialogTitle>
             <DialogDescription>
-              새 비밀번호를 입력해주세요.
+              보안을 위해 현재 비밀번호와 새 비밀번호를 입력해주세요.
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="current-password" className="text-right">
+                현재 비밀번호
+              </Label>
+              <Input
+                id="current-password"
+                type="password"
+                value={currentPassword}
+                onChange={(e) => setCurrentPassword(e.target.value)}
+                className="col-span-3"
+              />
+            </div>
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="new-password" className="text-right">
                 새 비밀번호
@@ -141,7 +173,10 @@ export function UserNav() {
           </div>
           <DialogFooter>
             <DialogClose asChild>
-                <Button type="button" variant="secondary">취소</Button>
+                <Button type="button" variant="secondary" onClick={() => {
+                  setCurrentPassword('');
+                  setNewPassword('');
+                }}>취소</Button>
             </DialogClose>
             <Button type="button" onClick={handlePasswordChange}>저장</Button>
           </DialogFooter>

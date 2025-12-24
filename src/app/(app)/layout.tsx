@@ -15,17 +15,19 @@ import {
 import { UserNav } from '@/components/user-nav';
 import { MainNav } from '@/components/main-nav';
 import { Logo } from '@/components/logo';
-import { mockBooks as initialMockBooks } from '@/lib/data';
+import { mockBooks as initialMockBooks, mockMembers as initialMockMembers } from '@/lib/data';
 import type { Book, Rental, Member } from '@/lib/types';
-import { FirebaseClientProvider, useFirebase, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, doc, writeBatch, serverTimestamp, query, getDocs, Timestamp } from 'firebase/firestore';
+import { FirebaseClientProvider, useFirebase, useCollection, useDoc, useMemoFirebase } from '@/firebase';
+import { collection, doc, writeBatch, serverTimestamp, query, where, getDocs, Timestamp, getDoc } from 'firebase/firestore';
 import { addDocumentNonBlocking, deleteDocumentNonBlocking, setDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+import { createUserWithEmailAndPassword } from 'firebase/auth';
 
 
 type UserRole = 'admin' | 'member';
 
 interface AuthContextType {
   user: {
+    uid: string;
     email: string | null;
     role: UserRole;
     name: string | null;
@@ -45,7 +47,7 @@ export function useAuth() {
 
 interface BooksContextType {
     books: Book[];
-    addBook: (book: Omit<Book, 'id' | 'imageHint' | 'description' | 'status' | 'reservedBy'> & { description?: string, coverImage: string }) => void;
+    addBook: (book: Omit<Book, 'id' | 'imageHint' | 'description' | 'status' | 'reservedBy' | 'dueDate'> & { description?: string, coverImage: string }) => void;
     updateBook: (book: Book) => void;
     deleteBook: (bookId: string) => void;
     rentals: Rental[];
@@ -95,7 +97,7 @@ const BooksProvider = ({ children }: { children: ReactNode }) => {
     }, [firestore]);
 
 
-    const addBook = useCallback((book: Omit<Book, 'id' | 'imageHint' | 'description' | 'status' | 'reservedBy'> & { description?: string, coverImage: string }) => {
+    const addBook = useCallback((book: Omit<Book, 'id' | 'imageHint' | 'description' | 'status' | 'reservedBy' | 'dueDate'> & { description?: string, coverImage: string }) => {
         if (!booksRef) return;
         const newBook: Omit<Book, 'id'> = {
             ...book,
@@ -103,6 +105,7 @@ const BooksProvider = ({ children }: { children: ReactNode }) => {
             imageHint: 'book cover',
             description: book.description || `"${book.title}"은(는) ${book.author} 작가의 ${book.category} 장르 책입니다.`,
             reservedBy: null,
+            dueDate: null,
         };
         addDocumentNonBlocking(booksRef, newBook);
     }, [booksRef]);
@@ -133,10 +136,12 @@ const BooksProvider = ({ children }: { children: ReactNode }) => {
         const q = query(collection(firestore, 'rentals'), where('bookId', '==', bookId), where('returnDate', '==', null));
         const querySnapshot = await getDocs(q);
         
+        const batch = writeBatch(firestore);
         querySnapshot.forEach((document) => {
             const rentalRef = doc(firestore, 'rentals', document.id);
-            updateDocumentNonBlocking(rentalRef, { returnDate: serverTimestamp() });
+            batch.update(rentalRef, { returnDate: serverTimestamp() });
         });
+        await batch.commit();
     }, [firestore]);
 
     const rentalsWithDateFix = useMemo(() => {
@@ -164,44 +169,101 @@ const BooksProvider = ({ children }: { children: ReactNode }) => {
 
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
-  const { user, isUserLoading, firestore } = useFirebase();
+  const { user, isUserLoading, auth, firestore } = useFirebase();
   const router = useRouter();
-
   const [authContext, setAuthContext] = useState<AuthContextType>({ user: null, isVerified: false });
+  const [isSeeding, setIsSeeding] = useState(true);
 
   const memberDocRef = useMemoFirebase(() => {
       if (!user || !firestore) return null;
       return doc(firestore, 'members', user.uid);
   }, [user, firestore]);
-  const { data: memberData, isLoading: isMemberLoading } = useCollection<Member>(memberDocRef ? collection(firestore, 'members') : null);
+  const { data: memberData } = useDoc<Member>(memberDocRef);
+
+  useEffect(() => {
+    const seedInitialUsers = async () => {
+        if (!auth || !firestore) return;
+        
+        const membersSnapshot = await getDocs(query(collection(firestore, 'members')));
+        if (!membersSnapshot.empty) {
+            setIsSeeding(false);
+            return;
+        }
+
+        console.log("Seeding initial users...");
+
+        const allUsersToSeed = [
+            ...initialMockMembers,
+            { name: '관리자', email: 'root@ipageon.com', role: 'admin' as const }
+        ];
+
+        const DEFAULT_PASSWORD = '1234';
+
+        try {
+            const batch = writeBatch(firestore);
+            for (const member of allUsersToSeed) {
+                try {
+                    const userCredential = await createUserWithEmailAndPassword(auth, member.email, DEFAULT_PASSWORD);
+                    const newUser = userCredential.user;
+                    
+                    const memberDocRef = doc(firestore, 'members', newUser.uid);
+                    const newMemberData: Member = {
+                        id: newUser.uid,
+                        email: member.email,
+                        name: member.name,
+                        role: member.role || 'member',
+                    };
+                    batch.set(memberDocRef, newMemberData);
+                } catch (error: any) {
+                    if (error.code === 'auth/email-already-in-use') {
+                        console.log(`User ${member.email} already exists in Auth. Skipping Auth creation.`);
+                        // If user exists in Auth but maybe not in Firestore, we could handle that here.
+                        // For this seeding script, we'll assume if it fails, it's okay to maybe re-run or handle manually.
+                    } else {
+                        console.error(`Error creating user ${member.email}:`, error);
+                    }
+                }
+            }
+            await batch.commit();
+            console.log("Initial user seeding complete.");
+        } catch (error) {
+            console.error("Error committing user seed batch:", error);
+        } finally {
+            setIsSeeding(false);
+        }
+    };
+
+    seedInitialUsers();
+  }, [auth, firestore]);
 
 
   useEffect(() => {
-    if (!isUserLoading) {
+    if (!isUserLoading && !isSeeding) {
       if (!user) {
         router.replace('/login');
       } else if (memberData) {
-        const currentMember = memberData.find(m => m.id === user.uid);
-        const userEmail = user.email || '';
-        const role = currentMember?.role || (userEmail === 'root@ipageon.com' ? 'admin' : 'member');
-        const name = currentMember?.name || user.displayName;
-        
         setAuthContext({
           user: {
-            email: userEmail,
-            role: role,
-            name: name,
+            uid: user.uid,
+            email: user.email || '',
+            role: memberData.role || 'member',
+            name: memberData.name,
           },
           isVerified: true,
         });
+      } else if(user && !memberData) {
+          // This can happen if the user exists in Auth but not in Firestore yet.
+          // The check for memberData will re-run when the useDoc hook updates.
+          console.log("Waiting for member data from Firestore...");
       }
     }
-  }, [user, isUserLoading, router, memberData]);
+  }, [user, isUserLoading, isSeeding, router, memberData]);
 
-  if (isUserLoading || !authContext.isVerified || isMemberLoading) {
+  if (isUserLoading || !authContext.isVerified || isSeeding) {
     return (
       <div className="flex h-screen items-center justify-center">
         <Loader2 className="h-10 w-10 animate-spin text-primary" />
+        {isSeeding && <p className="ml-4">초기 사용자 정보를 설정하는 중입니다...</p>}
       </div>
     );
   }

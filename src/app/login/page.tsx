@@ -12,9 +12,7 @@ import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, BookMarked } from 'lucide-react';
 import { useFirebase } from '@/firebase';
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword, AuthErrorCodes } from 'firebase/auth';
-import { doc, setDoc } from 'firebase/firestore';
-import { mockMembers } from '@/lib/data';
+import { signInWithEmailAndPassword, AuthErrorCodes } from 'firebase/auth';
 
 const loginSchema = z.object({
   email: z.string().email({ message: '올바른 이메일 주소를 입력해주세요.' }),
@@ -23,13 +21,11 @@ const loginSchema = z.object({
 
 type LoginFormValues = z.infer<typeof loginSchema>;
 
-const DEFAULT_PASSWORD = '1234';
-
 export default function LoginPage() {
   const router = useRouter();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
-  const { auth, firestore, user, isUserLoading } = useFirebase();
+  const { auth, user, isUserLoading } = useFirebase();
 
   useEffect(() => {
     if (!isUserLoading && user) {
@@ -47,7 +43,7 @@ export default function LoginPage() {
 
   const onSubmit = async (data: LoginFormValues) => {
     setIsLoading(true);
-    if (!auth || !firestore) {
+    if (!auth) {
         toast({ variant: 'destructive', title: '오류', description: 'Firebase가 초기화되지 않았습니다.' });
         setIsLoading(false);
         return;
@@ -55,71 +51,30 @@ export default function LoginPage() {
 
     try {
         await signInWithEmailAndPassword(auth, data.email, data.password);
-        loginSuccess(data.email);
+        toast({
+          title: '로그인 성공',
+          description: `환영합니다, ${data.email}!`,
+        });
+        router.push('/dashboard');
     } catch (error: any) {
         if (error.code === AuthErrorCodes.INVALID_CREDENTIAL) {
-             try {
-                const memberInfo = mockMembers.find(m => m.email === data.email);
-                const isAdmin = data.email === 'root@ipageon.com';
-
-                if ((memberInfo || isAdmin) && data.password === DEFAULT_PASSWORD) {
-                    const userCredential = await createUserWithEmailAndPassword(auth, data.email, data.password);
-                    const memberRef = doc(firestore, "members", userCredential.user.uid);
-
-                    let newMemberData;
-                    if (isAdmin) {
-                        newMemberData = { id: userCredential.user.uid, email: data.email, name: '관리자', role: 'admin' };
-                    } else if (memberInfo) {
-                        newMemberData = { ...memberInfo, id: userCredential.user.uid, role: 'member' };
-                    }
-                    
-                    if (newMemberData) {
-                        await setDoc(memberRef, newMemberData);
-                        loginSuccess(data.email);
-                    } else {
-                        throw new Error("회원 정보를 찾을 수 없습니다.");
-                    }
-                } else {
-                     toast({
-                        variant: 'destructive',
-                        title: '로그인 실패',
-                        description: '이메일 또는 비밀번호가 올바르지 않거나, 첫 로그인의 경우 기본 비밀번호(1234)를 확인해주세요.',
-                    });
-                }
-            } catch (creationError: any) {
-                if (creationError.code === AuthErrorCodes.EMAIL_EXISTS) {
-                    toast({
-                        variant: 'destructive',
-                        title: '로그인 실패',
-                        description: '비밀번호가 올바르지 않습니다.',
-                    });
-                } else {
-                    toast({
-                        variant: 'destructive',
-                        title: '오류',
-                        description: creationError.message,
-                    });
-                }
-            }
-        } else {
             toast({
                 variant: 'destructive',
                 title: '로그인 실패',
-                description: error.message,
+                description: '이메일 또는 비밀번호가 올바르지 않습니다.',
             });
+        } else {
+            toast({
+                variant: 'destructive',
+                title: '로그인 오류',
+                description: '알 수 없는 오류가 발생했습니다. 잠시 후 다시 시도해주세요.',
+            });
+            console.error(error);
         }
     } finally {
         setIsLoading(false);
     }
   };
-  
-  const loginSuccess = (email: string) => {
-    toast({
-      title: '로그인 성공',
-      description: `환영합니다, ${email}!`,
-    });
-    router.push('/dashboard');
-  }
 
   if (isUserLoading || user) {
     return (
@@ -128,7 +83,6 @@ export default function LoginPage() {
       </div>
     );
   }
-
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
