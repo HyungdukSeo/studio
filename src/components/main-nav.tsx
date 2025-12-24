@@ -17,30 +17,32 @@ export function MainNav({ className }: { className?: string }) {
   const isAdmin = user?.role === 'admin';
 
   const menuItems = [
-    { href: '/dashboard', label: '도서 대출', icon: LayoutDashboard },
-    { href: '/admin/books', label: '도서 관리', icon: Book },
-    { href: '/admin/members', label: '회원 관리', icon: Users },
-    { href: '/admin/rentals', label: '대여 현황', icon: BookCheck },
-    { href: '/admin/reports', label: '리포트', icon: LineChart },
+    { href: '/dashboard', label: '도서 대출', icon: LayoutDashboard, adminOnly: false },
+    { href: '/admin/books', label: '도서 관리', icon: Book, adminOnly: true },
+    { href: '/admin/members', label: '회원 관리', icon: Users, adminOnly: true },
+    { href: '/admin/rentals', label: '대여 현황', icon: BookCheck, adminOnly: true },
+    { href: '/admin/reports', label: '리포트', icon: LineChart, adminOnly: true },
   ];
 
   return (
     <nav className={cn('flex flex-col', className)}>
       <SidebarMenu>
-        {menuItems.map((item) => (
-          <SidebarMenuItem key={item.href}>
-            <SidebarMenuButton
-              asChild
-              isActive={pathname.startsWith(item.href)}
-              tooltip={{ children: item.label }}
-            >
-              <Link href={item.href}>
-                <item.icon />
-                <span>{item.label}</span>
-              </Link>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        ))}
+        {menuItems.map((item) => 
+          (!item.adminOnly || isAdmin) && (
+            <SidebarMenuItem key={item.href}>
+              <SidebarMenuButton
+                asChild
+                isActive={pathname.startsWith(item.href)}
+                tooltip={{ children: item.label }}
+              >
+                <Link href={item.href}>
+                  <item.icon />
+                  <span>{item.label}</span>
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          )
+        )}
       </SidebarMenu>
     </nav>
   );

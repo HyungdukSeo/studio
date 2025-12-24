@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import type { RentalInfo } from './page';
 import type { Book } from '@/lib/types';
+import { useAuth } from '../../layout';
 
 const statusDisplay = {
   reserved: '예약 중',
@@ -22,76 +23,86 @@ type ColumnsOptions = {
   onConfirmReturn: (book: Book) => void;
 };
 
-export const columns = ({ onApproveLoan, onExtendDueDate, onConfirmReturn }: ColumnsOptions): ColumnDef<RentalInfo>[] => [
-  {
-    accessorKey: 'memberName',
-    header: '대여자',
-    cell: ({ row }) => <div className="font-medium">{row.getValue('memberName')}</div>,
-  },
-  {
-    accessorKey: 'title',
-    header: '도서명',
-  },
-  {
-    accessorKey: 'author',
-    header: '저자',
-  },
-  {
-    accessorKey: 'status',
-    header: '상태',
-    cell: ({ row }) => {
-      const status = row.original.status;
-      if (status !== 'borrowed' && status !== 'reserved') return null;
+export const columns = ({ onApproveLoan, onExtendDueDate, onConfirmReturn }: ColumnsOptions): ColumnDef<RentalInfo>[] => {
+  const { user } = useAuth();
+  const isAdmin = user?.role === 'admin';
 
-      return <Badge className={`${statusStyles[status]} whitespace-nowrap`}>{statusDisplay[status]}</Badge>;
+  const baseColumns: ColumnDef<RentalInfo>[] = [
+    {
+      accessorKey: 'memberName',
+      header: '대여자',
+      cell: ({ row }) => <div className="font-medium">{row.getValue('memberName')}</div>,
     },
-  },
-  {
-    accessorKey: 'dueDate',
-    header: '반납 기한',
-    cell: ({ row }) => {
-      const book = row.original;
-      if (book.status !== 'borrowed' || !book.dueDate) return null;
-      return <span>{book.dueDate}</span>;
+    {
+      accessorKey: 'title',
+      header: '도서명',
     },
-  },
-  {
-    id: 'actions',
-    header: '관리',
-    cell: function ActionsCell({ row }) {
-      const book = row.original;
-      
-      return (
-        <div className="text-center space-x-2">
-          {book.status === 'reserved' && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => onApproveLoan(book)}
-            >
-              대여 승인
-            </Button>
-          )}
-           {book.status === 'borrowed' && (
-            <>
+    {
+      accessorKey: 'author',
+      header: '저자',
+    },
+    {
+      accessorKey: 'status',
+      header: '상태',
+      cell: ({ row }) => {
+        const status = row.original.status;
+        if (status !== 'borrowed' && status !== 'reserved') return null;
+
+        return <Badge className={`${statusStyles[status]} whitespace-nowrap`}>{statusDisplay[status]}</Badge>;
+      },
+    },
+    {
+      accessorKey: 'dueDate',
+      header: '반납 기한',
+      cell: ({ row }) => {
+        const book = row.original;
+        if (book.status !== 'borrowed' || !book.dueDate) return null;
+        return <span>{book.dueDate}</span>;
+      },
+    },
+  ];
+
+  if (isAdmin) {
+    baseColumns.push({
+      id: 'actions',
+      header: '관리',
+      cell: function ActionsCell({ row }) {
+        const book = row.original;
+        
+        return (
+          <div className="text-center space-x-2">
+            {book.status === 'reserved' && (
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => onExtendDueDate(book)}
+                onClick={() => onApproveLoan(book)}
               >
-                연장하기
+                대여 승인
               </Button>
-              <Button
-                variant="default"
-                size="sm"
-                onClick={() => onConfirmReturn(book)}
-              >
-                반납 확인
-              </Button>
-            </>
-          )}
-        </div>
-      );
-    },
-  },
-];
+            )}
+             {book.status === 'borrowed' && (
+              <>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => onExtendDueDate(book)}
+                >
+                  연장하기
+                </Button>
+                <Button
+                  variant="default"
+                  size="sm"
+                  onClick={() => onConfirmReturn(book)}
+                >
+                  반납 확인
+                </Button>
+              </>
+            )}
+          </div>
+        );
+      },
+    });
+  }
+
+  return baseColumns;
+};
