@@ -1,4 +1,4 @@
-import type { Book, Member, Rental } from './types';
+import type { Book, Member } from './types';
 
 const newBooks: {title: string, author: string, category: string, coverImage?: string}[] = [
     { title: '믿는 만큼 자라는 아이들', author: '박혜란', category: '자녀교육' , coverImage: 'https://shopping-phinf.pstatic.net/main_3247666/32476662545.20231102092110.jpg' },
@@ -92,29 +92,3 @@ export const mockMembers: Member[] = newMembers.map((member, i) => ({
     name: member.name,
     email: member.email,
 }));
-
-
-export const mockRentals: Rental[] = Array.from({ length: 100 }, (_, i) => {
-    const book = mockBooks[i % mockBooks.length];
-    const member = mockMembers[i % mockMembers.length];
-    const rentalDate = new Date();
-    rentalDate.setMonth(rentalDate.getMonth() - (i % 12));
-    rentalDate.setFullYear(rentalDate.getFullYear() - Math.floor(i / 24));
-    
-    const shouldBeReturned = Math.random() > 0.3;
-    let returnDate: Date | null = null;
-    if (shouldBeReturned) {
-        returnDate = new Date(rentalDate);
-        returnDate.setDate(returnDate.getDate() + (14 + (i % 14)));
-    }
-
-    return {
-        id: `rental-${i + 1}`,
-        bookId: book.id,
-        memberId: member.id,
-        rentalDate,
-        returnDate,
-        bookTitle: book.title,
-        memberName: member.name
-    };
-});

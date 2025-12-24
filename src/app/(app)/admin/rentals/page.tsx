@@ -4,7 +4,7 @@ import { useMemo, useCallback } from 'react';
 import { PageHeader } from '@/components/page-header';
 import { columns } from './columns';
 import { RentalStatusTable } from './rental-status-table';
-import { useBooks } from '../../layout';
+import { useAuth, useBooks } from '../../layout';
 import { mockMembers } from '@/lib/data';
 import type { Book, Member } from '@/lib/types';
 import { format, addDays } from 'date-fns';
@@ -14,16 +14,33 @@ export type RentalInfo = Book & {
 };
 
 export default function AdminRentalsPage() {
-  const { books, updateBook } = useBooks();
+  const { books, updateBook, addRental, endRental } = useBooks();
+  const { user } = useAuth();
+  const isAdmin = user?.role === 'admin';
 
   const handleApproveLoan = useCallback((book: Book) => {
+    if (!book.reservedBy) return;
     const dueDate = addDays(new Date(), 7);
-    updateBook({ 
-      ...book, 
-      status: 'borrowed',
-      dueDate: format(dueDate, 'yyyy-MM-dd') 
-    });
-  }, [updateBook]);
+    const updatedBook = {
+        ...book, 
+        status: 'borrowed' as const,
+        dueDate: format(dueDate, 'yyyy-MM-dd') 
+    };
+    updateBook(updatedBook);
+    
+    const member = mockMembers.find(m => m.email === book.reservedBy);
+    if(member) {
+        addRental({
+            bookId: book.id,
+            memberId: member.id,
+            rentalDate: new Date(),
+            returnDate: null,
+            bookTitle: book.title,
+            memberName: member.name
+        });
+    }
+
+  }, [updateBook, addRental]);
 
   const handleExtendDueDate = useCallback((book: Book) => {
     if (!book.dueDate) return;
@@ -34,7 +51,8 @@ export default function AdminRentalsPage() {
   
   const handleConfirmReturn = useCallback((book: Book) => {
     updateBook({ ...book, status: 'available', reservedBy: null, dueDate: null });
-  }, [updateBook]);
+    endRental(book.id);
+  }, [updateBook, endRental]);
 
 
   const rentalData: RentalInfo[] = useMemo(() => {

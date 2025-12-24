@@ -10,19 +10,28 @@ import {
 } from '@/components/ui/chart';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { mockRentals, mockMembers } from '@/lib/data';
+import { useBooks } from '../../layout';
+import { mockMembers } from '@/lib/data';
+import type { Rental } from '@/lib/types';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
-const processData = (rentals: typeof mockRentals, period: 'monthly' | 'yearly') => {
+const processData = (rentals: Rental[], period: 'monthly' | 'yearly') => {
   const dataMap = new Map<string, number>();
+  const oneYearAgo = new Date();
+  oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
 
   rentals.forEach((rental) => {
-    const date = rental.rentalDate;
+    const rentalDate = new Date(rental.rentalDate);
+    
+    if (period === 'monthly' && rentalDate < oneYearAgo) {
+      return;
+    }
+
     let key: string;
     if (period === 'monthly') {
-      key = date.toLocaleString('default', { month: 'short', year: '2-digit' });
+      key = rentalDate.toLocaleString('default', { month: 'short', year: '2-digit' });
     } else {
-      key = date.getFullYear().toString();
+      key = rentalDate.getFullYear().toString();
     }
     dataMap.set(key, (dataMap.get(key) || 0) + 1);
   });
@@ -39,7 +48,7 @@ const processData = (rentals: typeof mockRentals, period: 'monthly' | 'yearly') 
   return sortedKeys.map((key) => ({
     name: key,
     rentals: dataMap.get(key) || 0,
-  })).slice(-12); // Show last 12 periods for clarity
+  })).slice(period === 'monthly' ? -12 : -Infinity);
 };
 
 const chartConfig = {
@@ -50,14 +59,15 @@ const chartConfig = {
 } satisfies ChartConfig;
 
 export function RentalCharts() {
+  const { rentals } = useBooks();
   const [selectedMemberId, setSelectedMemberId] = useState('all');
 
   const filteredRentals = useMemo(() => {
     if (selectedMemberId === 'all') {
-      return mockRentals;
+      return rentals;
     }
-    return mockRentals.filter((rental) => rental.memberId === selectedMemberId);
-  }, [selectedMemberId]);
+    return rentals.filter((rental) => rental.memberId === selectedMemberId);
+  }, [selectedMemberId, rentals]);
   
   const selectedMemberName = useMemo(() => {
     if (selectedMemberId === 'all') return '전체 회원';

@@ -23,8 +23,8 @@ export type Rental = {
   id: string;
   bookId: string;
   memberId: string;
-  rentalDate: Date;
-  returnDate: Date | null;
-  bookTitle?: string;
-  memberName?: string;
+  rentalDate: string;
+  returnDate: string | null;
+  bookTitle: string;
+  memberName: string;
 };

@@ -19,9 +19,9 @@ export function MainNav({ className }: { className?: string }) {
   const menuItems = [
     { href: '/dashboard', label: '도서 대출', icon: LayoutDashboard, adminOnly: false },
     { href: '/admin/books', label: '도서 관리', icon: Book, adminOnly: true },
-    { href: '/admin/members', label: '회원 관리', icon: Users, adminOnly: true },
-    { href: '/admin/rentals', label: '대여 현황', icon: BookCheck, adminOnly: true },
-    { href: '/admin/reports', label: '리포트', icon: LineChart, adminOnly: true },
+    { href: '/admin/members', label: '회원 관리', icon: Users, adminOnly: false },
+    { href: '/admin/rentals', label: '대여 현황', icon: BookCheck, adminOnly: false },
+    { href: '/admin/reports', label: '리포트', icon: LineChart, adminOnly: false },
   ];
 
   return (

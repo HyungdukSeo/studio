@@ -16,7 +16,7 @@ import { UserNav } from '@/components/user-nav';
 import { MainNav } from '@/components/main-nav';
 import { Logo } from '@/components/logo';
 import { mockBooks as initialMockBooks } from '@/lib/data';
-import type { Book } from '@/lib/types';
+import type { Book, Rental } from '@/lib/types';
 
 
 type UserRole = 'admin' | 'member';
@@ -44,6 +44,9 @@ interface BooksContextType {
     addBook: (book: Omit<Book, 'id' | 'imageHint' | 'description' | 'status' | 'reservedBy'> & { description?: string, coverImage: string }) => void;
     updateBook: (book: Book) => void;
     deleteBook: (bookId: string) => void;
+    rentals: Rental[];
+    addRental: (rental: Omit<Rental, 'id'>) => void;
+    endRental: (bookId: string) => void;
 }
 
 const BooksContext = createContext<BooksContextType | null>(null);
@@ -58,34 +61,43 @@ export function useBooks() {
 
 const BooksProvider = ({ children }: { children: ReactNode }) => {
     const [books, setBooks] = useState<Book[]>([]);
-    const [isBooksInitialized, setIsBooksInitialized] = useState(false);
+    const [rentals, setRentals] = useState<Rental[]>([]);
+    const [isDataInitialized, setIsDataInitialized] = useState(false);
 
     useEffect(() => {
-        const initializeBooks = () => {
+        const initializeData = () => {
             try {
                 const storedBooks = localStorage.getItem('books_data');
                 if (storedBooks) {
-                    const parsedBooks = JSON.parse(storedBooks);
-                    setBooks(parsedBooks);
+                    setBooks(JSON.parse(storedBooks));
                 } else {
                     localStorage.setItem('books_data', JSON.stringify(initialMockBooks));
                     setBooks(initialMockBooks);
                 }
+
+                const storedRentals = localStorage.getItem('rentals_data');
+                if (storedRentals) {
+                    setRentals(JSON.parse(storedRentals));
+                } else {
+                    localStorage.setItem('rentals_data', JSON.stringify([]));
+                    setRentals([]);
+                }
             } catch (error) {
-                console.error("Failed to initialize or load books data:", error);
+                console.error("Failed to initialize or load data:", error);
                 setBooks(initialMockBooks);
+                setRentals([]);
             }
-            setIsBooksInitialized(true);
+            setIsDataInitialized(true);
         };
 
-        initializeBooks();
+        initializeData();
     }, []);
 
-    const updateLocalStorage = (newBooks: Book[]) => {
+    const updateLocalStorage = (key: string, data: any[]) => {
         try {
-            localStorage.setItem('books_data', JSON.stringify(newBooks));
+            localStorage.setItem(key, JSON.stringify(data));
         } catch (error) {
-            console.error("Failed to save books data to localStorage:", error);
+            console.error(`Failed to save ${key} to localStorage:`, error);
         }
     };
     
@@ -100,7 +112,7 @@ const BooksProvider = ({ children }: { children: ReactNode }) => {
                 reservedBy: null,
             };
             const newBooks = [newBook, ...prev];
-            updateLocalStorage(newBooks);
+            updateLocalStorage('books_data', newBooks);
             return newBooks;
         });
     }, []);
@@ -108,7 +120,7 @@ const BooksProvider = ({ children }: { children: ReactNode }) => {
     const updateBook = useCallback((updatedBook: Book) => {
         setBooks(prev => {
             const newBooks = prev.map(b => b.id === updatedBook.id ? updatedBook : b);
-            updateLocalStorage(newBooks);
+            updateLocalStorage('books_data', newBooks);
             return newBooks;
         });
     }, []);
@@ -116,17 +128,42 @@ const BooksProvider = ({ children }: { children: ReactNode }) => {
     const deleteBook = useCallback((bookId: string) => {
         setBooks(prev => {
             const newBooks = prev.filter(b => b.id !== bookId);
-            updateLocalStorage(newBooks);
+            updateLocalStorage('books_data', newBooks);
             return newBooks;
         });
     }, []);
+
+    const addRental = useCallback((rental: Omit<Rental, 'id'>) => {
+        setRentals(prev => {
+            const newRental: Rental = {
+                ...rental,
+                id: `rental-${Date.now()}`
+            };
+            const newRentals = [...prev, newRental];
+            updateLocalStorage('rentals_data', newRentals);
+            return newRentals;
+        });
+    }, []);
+
+    const endRental = useCallback((bookId: string) => {
+        setRentals(prev => {
+            const now = new Date();
+            const newRentals = prev.map(r => 
+                (r.bookId === bookId && r.returnDate === null) 
+                ? { ...r, returnDate: now.toISOString() } 
+                : r
+            );
+            updateLocalStorage('rentals_data', newRentals);
+            return newRentals;
+        });
+    }, []);
     
-    if (!isBooksInitialized) {
+    if (!isDataInitialized) {
         return null; // Or a loading indicator
     }
 
     return (
-        <BooksContext.Provider value={{ books, addBook, updateBook, deleteBook }}>
+        <BooksContext.Provider value={{ books, addBook, updateBook, deleteBook, rentals, addRental, endRental }}>
             {children}
         </BooksContext.Provider>
     );
