@@ -13,8 +13,8 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { LogOut, User, Lock, Database } from 'lucide-react';
-import { useAuth, useBooks } from '@/app/(app)/layout';
+import { LogOut, User, Lock } from 'lucide-react';
+import { useAuth } from '@/app/(app)/layout';
 import { useFirebase } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { signOut, updatePassword, reauthenticateWithCredential, EmailAuthProvider } from 'firebase/auth';
@@ -34,7 +34,6 @@ import { Label } from '@/components/ui/label';
 export function UserNav() {
   const router = useRouter();
   const authContext = useAuth();
-  const { seedInitialData } = useBooks();
   const { auth, user: firebaseUser } = useFirebase();
   const { toast } = useToast();
   const [isPasswordDialogOpen, setIsPasswordDialogOpen] = useState(false);
@@ -100,7 +99,6 @@ export function UserNav() {
   };
 
   const userInitial = authContext.user?.email ? authContext.user.email.charAt(0).toUpperCase() : '?';
-  const isAdmin = authContext.user?.role === 'admin';
 
   return (
     <>
@@ -130,12 +128,6 @@ export function UserNav() {
                   <Lock className="mr-2 h-4 w-4" />
                   <span>비밀번호 변경</span>
               </DropdownMenuItem>
-             {isAdmin && (
-                <DropdownMenuItem onClick={seedInitialData}>
-                    <Database className="mr-2 h-4 w-4" />
-                    <span>초기 도서 설정</span>
-                </DropdownMenuItem>
-             )}
           </DropdownMenuGroup>
           <DropdownMenuSeparator />
           <DropdownMenuItem onClick={handleLogout}>

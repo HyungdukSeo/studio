@@ -12,7 +12,7 @@ import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, BookMarked } from 'lucide-react';
 import { useFirebase } from '@/firebase';
-import { signInWithEmailAndPassword, AuthErrorCodes, createUserWithEmailAndPassword } from 'firebase/auth';
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword, AuthError } from 'firebase/auth';
 
 const loginSchema = z.object({
   email: z.string().email({ message: '올바른 이메일 주소를 입력해주세요.' }),
@@ -37,49 +37,60 @@ export default function LoginPage() {
     resolver: zodResolver(loginSchema),
     defaultValues: {
       email: '',
-      password: '',
+      password: '123456',
     },
   });
 
   const onSubmit = async (data: LoginFormValues) => {
     setIsSubmitting(true);
     if (!auth) {
-        toast({ variant: 'destructive', title: '오류', description: 'Firebase가 초기화되지 않았습니다.' });
-        setIsSubmitting(false);
-        return;
+      toast({ variant: 'destructive', title: '오류', description: 'Firebase가 초기화되지 않았습니다.' });
+      setIsSubmitting(false);
+      return;
     }
-
+  
     try {
-        await signInWithEmailAndPassword(auth, data.email, data.password);
-        toast({
-          title: '로그인 성공',
-          description: `환영합니다, ${data.email}!`,
-        });
-    } catch (error: any) {
-        if (error.code === AuthErrorCodes.INVALID_CREDENTIAL) {
-            try {
-                await createUserWithEmailAndPassword(auth, data.email, data.password);
-                toast({
-                  title: '계정 생성 및 로그인 성공',
-                  description: `새 계정이 생성되었습니다. 환영합니다, ${data.email}!`,
-                });
-            } catch (creationError: any) {
-                 toast({
-                    variant: 'destructive',
-                    title: '가입 실패',
-                    description: '계정 생성에 실패했습니다: ' + creationError.message,
-                });
-            }
-        } else {
-            toast({
-                variant: 'destructive',
-                title: '로그인 오류',
-                description: '알 수 없는 오류가 발생했습니다: ' + error.message,
-            });
-            console.error(error);
+      // 1. First, try to sign in
+      await signInWithEmailAndPassword(auth, data.email, data.password);
+      toast({
+        title: '로그인 성공',
+        description: `환영합니다, ${data.email}!`,
+      });
+      // On successful login, the useEffect will redirect to /dashboard
+  
+    } catch (error) {
+      const authError = error as AuthError;
+  
+      // 2. If user does not exist, create a new account
+      if (authError.code === 'auth/invalid-credential' || authError.code === 'auth/user-not-found') {
+        try {
+          await createUserWithEmailAndPassword(auth, data.email, data.password);
+          toast({
+            title: '계정 생성 완료',
+            description: '계정이 성공적으로 생성되었습니다. 다시 로그인해주세요.',
+          });
+          // Clear password field to prompt re-login
+          form.reset({ email: data.email, password: '' });
+
+        } catch (creationError) {
+          const creationAuthError = creationError as AuthError;
+          toast({
+            variant: 'destructive',
+            title: '가입 실패',
+            description: `계정 생성 중 오류가 발생했습니다: ${creationAuthError.message}`,
+          });
         }
+      } else {
+        // 3. Handle other login errors
+        toast({
+          variant: 'destructive',
+          title: '로그인 오류',
+          description: authError.message || '알 수 없는 오류가 발생했습니다.',
+        });
+        console.error("Login error:", authError);
+      }
     } finally {
-        setIsSubmitting(false);
+      setIsSubmitting(false);
     }
   };
 

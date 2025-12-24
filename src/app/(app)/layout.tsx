@@ -53,7 +53,6 @@ interface BooksContextType {
     addRental: (rental: Omit<Rental, 'id'>) => void;
     endRental: (bookId: string) => void;
     members: Member[];
-    seedInitialData: () => Promise<void>;
 }
 
 const BooksContext = createContext<BooksContextType | null>(null);
@@ -67,8 +66,7 @@ export function useBooks() {
 }
 
 const BooksProvider = ({ children }: { children: ReactNode }) => {
-    const { firestore, auth } = useFirebase();
-    const { toast } = useToast();
+    const { firestore } = useFirebase();
 
     const booksRef = useMemoFirebase(() => firestore ? collection(firestore, 'books') : null, [firestore]);
     const { data: books, isLoading: isLoadingBooks } = useCollection<Book>(booksRef);
@@ -78,33 +76,6 @@ const BooksProvider = ({ children }: { children: ReactNode }) => {
 
     const membersRef = useMemoFirebase(() => firestore ? collection(firestore, 'members') : null, [firestore]);
     const { data: members, isLoading: isLoadingMembers } = useCollection<Member>(membersRef);
-    
-    const seedInitialData = async () => {
-        if (!firestore) {
-          toast({ variant: 'destructive', title: '오류', description: 'Firebase가 초기화되지 않았습니다.' });
-          return;
-        }
-    
-        toast({ title: '시작', description: '초기 도서 데이터 생성을 시작합니다...' });
-    
-        try {
-          const booksSnapshot = await getDocs(booksRef);
-          if (booksSnapshot.empty) {
-            const batch = writeBatch(firestore);
-            mockBooks.forEach((book) => {
-              const newBookRef = doc(collection(firestore, 'books'));
-              batch.set(newBookRef, book);
-            });
-            await batch.commit();
-            toast({ title: '성공', description: '초기 도서 데이터가 성공적으로 생성되었습니다.' });
-          } else {
-             toast({ title: '알림', description: '이미 도서 데이터가 존재합니다. 초기화를 건너뜁니다.' });
-          }
-        } catch (error: any) {
-          console.error('Error seeding data:', error);
-          toast({ variant: 'destructive', title: '심각한 오류', description: `초기 데이터 생성 중 오류 발생: ${error.message}` });
-        }
-    };
 
     if (isLoadingBooks || isLoadingRentals || isLoadingMembers) {
         return (
@@ -168,7 +139,7 @@ const BooksProvider = ({ children }: { children: ReactNode }) => {
     })) || [];
 
     return (
-        <BooksContext.Provider value={{ books: books || [], addBook, updateBook, deleteBook, rentals: rentalsWithDateFix, addRental, endRental, members: members || [], seedInitialData }}>
+        <BooksContext.Provider value={{ books: books || [], addBook, updateBook, deleteBook, rentals: rentalsWithDateFix, addRental, endRental, members: members || [] }}>
             {children}
         </BooksContext.Provider>
     );
@@ -178,6 +149,7 @@ const BooksProvider = ({ children }: { children: ReactNode }) => {
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { user: firebaseUser, isUserLoading, firestore } = useFirebase();
   const router = useRouter();
+  const { toast } = useToast();
   const [authContext, setAuthContext] = useState<AuthContextType>({ user: null, isVerified: false });
   const [isDataSyncing, setIsDataSyncing] = useState(true);
 
@@ -210,8 +182,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         try {
           await setDoc(memberDocRef, newMemberData);
           finalMemberData = newMemberData;
+          toast({ title: '환영합니다!', description: `프로필 정보가 생성되었습니다.` });
         } catch (error) {
           console.error("Error creating member document:", error);
+          toast({ variant: 'destructive', title: '오류', description: '프로필 정보 생성에 실패했습니다.' });
           setIsDataSyncing(false);
           return;
         }
@@ -233,7 +207,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
     syncMemberData();
 
-  }, [firebaseUser, isUserLoading, router, firestore]);
+  }, [firebaseUser, isUserLoading, router, firestore, toast]);
 
   if (isUserLoading || isDataSyncing) {
     return (
