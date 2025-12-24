@@ -17,7 +17,7 @@ export type Member = {
   id: string; // This will be the Firebase Auth UID
   name: string;
   email: string;
-  role: 'admin' | 'member';
+  role?: 'admin' | 'member';
 };
 
 export type Rental = {

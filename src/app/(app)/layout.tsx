@@ -15,7 +15,7 @@ import {
 import { UserNav } from '@/components/user-nav';
 import { MainNav } from '@/components/main-nav';
 import { Logo } from '@/components/logo';
-import { mockBooks as initialMockBooks } from '@/lib/data';
+import { mockBooks as initialMockBooks, mockMembers as initialMockMembers } from '@/lib/data';
 import type { Book, Rental, Member } from '@/lib/types';
 import { FirebaseClientProvider, useFirebase, useCollection, useDoc, useMemoFirebase } from '@/firebase';
 import { collection, doc, writeBatch, serverTimestamp, query, where, getDocs, Timestamp } from 'firebase/firestore';
@@ -66,7 +66,7 @@ export function useBooks() {
 }
 
 const BooksProvider = ({ children }: { children: ReactNode }) => {
-    const { firestore } = useFirebase();
+    const { firestore, user } = useFirebase();
 
     const booksRef = useMemoFirebase(() => firestore ? collection(firestore, 'books') : null, [firestore]);
     const { data: books, isLoading: isLoadingBooks } = useCollection<Book>(booksRef);
@@ -83,14 +83,34 @@ const BooksProvider = ({ children }: { children: ReactNode }) => {
 
             const booksSnapshot = await getDocs(query(collection(firestore, 'books')));
             if (booksSnapshot.empty) {
-                console.log("Seeding initial books...");
+                console.log("Seeding initial data...");
                 const batch = writeBatch(firestore);
+                
+                // Seed Books
                 initialMockBooks.forEach(book => {
                     const bookDocRef = doc(collection(firestore, 'books'));
                     batch.set(bookDocRef, {...book, id: bookDocRef.id});
                 });
+
+                // Seed Members
+                const allMembersToSeed = [
+                    ...initialMockMembers,
+                    { name: '관리자', email: 'root@ipageon.com', role: 'admin' as const }
+                ];
+
+                allMembersToSeed.forEach(member => {
+                    // We use email as ID for simplicity in seeding, but in a real app, you'd use UID.
+                    // This is a simplification for this specific seeding purpose.
+                    // The login logic will correctly use UID.
+                    const memberDocRef = doc(collection(firestore, 'members'), member.email);
+                    batch.set(memberDocRef, {
+                        ...member,
+                        // 'id' field is not needed if document ID is email
+                    });
+                });
+                
                 await batch.commit();
-                console.log("Book seeding complete.");
+                console.log("Data seeding complete.");
             }
         };
 
@@ -175,8 +195,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const [authContext, setAuthContext] = useState<AuthContextType>({ user: null, isVerified: false });
 
   const memberDocRef = useMemoFirebase(() => {
-      if (!user || !firestore) return null;
-      return doc(firestore, 'members', user.uid);
+      if (!user || !user.email || !firestore) return null;
+      // Fetch member data using email, as that's our seeded key. In a real app, you might query by UID.
+      return doc(firestore, 'members', user.email);
   }, [user, firestore]);
   const { data: memberData } = useDoc<Member>(memberDocRef);
 
@@ -196,6 +217,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         });
       } else if(user && !memberData) {
           console.log("Waiting for member data from Firestore...");
+          // This can happen briefly while data loads.
+          // Or if the member doc doesn't exist for some reason.
       }
     }
   }, [user, isUserLoading, router, memberData]);

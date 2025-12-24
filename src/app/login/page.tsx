@@ -13,9 +13,10 @@ import { useToast } from '@/hooks/use-toast';
 import { Loader2, BookMarked } from 'lucide-react';
 import { useFirebase } from '@/firebase';
 import { signInWithEmailAndPassword, AuthErrorCodes, createUserWithEmailAndPassword } from 'firebase/auth';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { mockMembers } from '@/lib/data';
-import { collection, doc, getDocs, query, writeBatch } from 'firebase/firestore';
 import type { Member } from '@/lib/types';
+
 
 const loginSchema = z.object({
   email: z.string().email({ message: '올바른 이메일 주소를 입력해주세요.' }),
@@ -27,85 +28,18 @@ type LoginFormValues = z.infer<typeof loginSchema>;
 export default function LoginPage() {
   const router = useRouter();
   const { toast } = useToast();
-  const [isLoading, setIsLoading] = useState(true);
+  const [isPageLoading, setIsPageLoading] = useState(true);
   const { auth, user, isUserLoading, firestore } = useFirebase();
 
   useEffect(() => {
-    const seedInitialUsers = async () => {
-        if (!auth || !firestore) return;
-        
-        // Check if seeding has already been done
-        const membersSnapshot = await getDocs(query(collection(firestore, 'members')));
-        if (!membersSnapshot.empty) {
-            setIsLoading(false);
-            return;
-        }
-
-        console.log("Seeding initial users...");
-
-        const allUsersToSeed = [
-            ...mockMembers,
-            { name: '관리자', email: 'root@ipageon.com', role: 'admin' as const }
-        ];
-        const DEFAULT_PASSWORD = '123456';
-
-        try {
-            // Use a temporary, detached Auth instance for seeding to avoid conflicts
-            const tempAuth = auth;
-            
-            const authPromises = allUsersToSeed.map(member => 
-                createUserWithEmailAndPassword(tempAuth, member.email, DEFAULT_PASSWORD)
-                    .then(userCredential => ({ member, userCredential }))
-                    .catch(error => {
-                        if (error.code === 'auth/email-already-in-use') {
-                            console.log(`User ${member.email} already exists in Auth. Skipping creation.`);
-                            return null; // Skip if user already exists in auth
-                        }
-                        console.error(`Error creating auth user ${member.email}:`, error);
-                        throw error; // Re-throw other errors
-                    })
-            );
-
-            const results = await Promise.all(authPromises);
-
-            const batch = writeBatch(firestore);
-            results.forEach(result => {
-                if (result) {
-                    const { member, userCredential } = result;
-                    const newUser = userCredential.user;
-                    const memberDocRef = doc(firestore, 'members', newUser.uid);
-                    const newMemberData: Member = {
-                        id: newUser.uid,
-                        email: member.email,
-                        name: member.name,
-                        role: member.role || 'member',
-                    };
-                    batch.set(memberDocRef, newMemberData);
-                }
-            });
-
-            await batch.commit();
-            console.log("Initial user seeding complete.");
-        } catch (error) {
-            console.error("Error during user seeding:", error);
-            toast({
-                variant: "destructive",
-                title: "초기화 오류",
-                description: "초기 사용자 정보 설정에 실패했습니다.",
-            });
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
-    seedInitialUsers();
-  }, [auth, firestore, toast]);
-
-  useEffect(() => {
-    if (!isUserLoading && user && !isLoading) {
-      router.replace('/dashboard');
+    if (!isUserLoading) {
+      if (user) {
+        router.replace('/dashboard');
+      } else {
+        setIsPageLoading(false);
+      }
     }
-  }, [user, isUserLoading, router, isLoading]);
+  }, [user, isUserLoading, router]);
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -116,10 +50,10 @@ export default function LoginPage() {
   });
 
   const onSubmit = async (data: LoginFormValues) => {
-    setIsLoading(true);
-    if (!auth) {
+    setIsPageLoading(true);
+    if (!auth || !firestore) {
         toast({ variant: 'destructive', title: '오류', description: 'Firebase가 초기화되지 않았습니다.' });
-        setIsLoading(false);
+        setIsPageLoading(false);
         return;
     }
 
@@ -132,11 +66,50 @@ export default function LoginPage() {
         // The useEffect will handle the redirect
     } catch (error: any) {
         if (error.code === AuthErrorCodes.INVALID_CREDENTIAL) {
-            toast({
-                variant: 'destructive',
-                title: '로그인 실패',
-                description: '이메일 또는 비밀번호가 올바르지 않습니다.',
-            });
+            // User does not exist or password incorrect. Try to create a new user if it's one of our mock users.
+            const allMockUsers = [...mockMembers, { name: '관리자', email: 'root@ipageon.com', role: 'admin' as const }];
+            const mockUser = allMockUsers.find(m => m.email.toLowerCase() === data.email.toLowerCase());
+            
+            if (mockUser && data.password === '123456') {
+                try {
+                    const userCredential = await createUserWithEmailAndPassword(auth, data.email, data.password);
+                    const newUser = userCredential.user;
+
+                    // Save member details to Firestore with UID as document ID
+                    const memberDocRef = doc(firestore, 'members', newUser.uid);
+                    const newMemberData: Member = {
+                        id: newUser.uid,
+                        email: mockUser.email,
+                        name: mockUser.name,
+                        role: mockUser.role || 'member',
+                    };
+                    await setDoc(memberDocRef, newMemberData);
+
+                    // Also create a reference by email for the layout to find
+                    const memberByEmailDocRef = doc(firestore, 'members', mockUser.email);
+                    await setDoc(memberByEmailDocRef, newMemberData);
+                    
+                    toast({
+                      title: '계정 생성 및 로그인 성공',
+                      description: `환영합니다, ${data.email}!`,
+                    });
+                    // Login successful, redirect is handled by useEffect
+                } catch (creationError: any) {
+                    toast({
+                        variant: 'destructive',
+                        title: '계정 생성 실패',
+                        description: '계정을 생성하는 중 오류가 발생했습니다: ' + creationError.message,
+                    });
+                    setIsPageLoading(false);
+                }
+            } else {
+                 toast({
+                    variant: 'destructive',
+                    title: '로그인 실패',
+                    description: '이메일 또는 비밀번호가 올바르지 않습니다.',
+                });
+                setIsPageLoading(false);
+            }
         } else {
             toast({
                 variant: 'destructive',
@@ -144,17 +117,15 @@ export default function LoginPage() {
                 description: '알 수 없는 오류가 발생했습니다. 잠시 후 다시 시도해주세요.',
             });
             console.error(error);
+            setIsPageLoading(false);
         }
-    } finally {
-        setIsLoading(false);
-    }
+    } 
   };
 
-  if (isUserLoading || user || isLoading) {
+  if (isUserLoading || user || isPageLoading) {
     return (
       <div className="flex h-screen items-center justify-center">
         <Loader2 className="h-10 w-10 animate-spin text-primary" />
-        {isLoading && <p className="ml-4">초기 사용자 정보를 설정하는 중입니다...</p>}
       </div>
     );
   }
@@ -198,7 +169,7 @@ export default function LoginPage() {
                   </FormItem>
                 )}
               />
-              <Button type="submit" className="w-full" disabled={isLoading}>
+              <Button type="submit" className="w-full" disabled={isPageLoading}>
                 로그인
               </Button>
             </form>
