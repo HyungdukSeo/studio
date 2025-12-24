@@ -17,6 +17,7 @@ import { mockMembers } from '@/lib/data';
 import type { Rental } from '@/lib/types';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { format } from 'date-fns';
+import { Badge } from '@/components/ui/badge';
 
 const processAllMembersData = (rentals: Rental[], period: 'monthly' | 'yearly', members: typeof mockMembers) => {
     const dataMap = new Map<string, { [memberName: string]: number }>();
@@ -297,6 +298,7 @@ export function RentalCharts() {
                         <TableHead>도서명</TableHead>
                         <TableHead>대여자</TableHead>
                         <TableHead>대여일</TableHead>
+                        <TableHead>상태</TableHead>
                     </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -306,11 +308,20 @@ export function RentalCharts() {
                                 <TableCell>{rental.bookTitle}</TableCell>
                                 <TableCell>{rental.memberName}</TableCell>
                                 <TableCell>{format(new Date(rental.rentalDate), 'yyyy-MM-dd')}</TableCell>
+                                <TableCell>
+                                {rental.returnDate ? (
+                                    <Badge variant="outline">반납완료</Badge>
+                                ) : (
+                                    <Badge className="text-red-800 bg-red-100 border-red-200 dark:bg-red-900/50 dark:text-red-300 dark:border-red-700">
+                                    대여중
+                                    </Badge>
+                                )}
+                                </TableCell>
                             </TableRow>
                         ))
                     ) : (
                         <TableRow>
-                            <TableCell colSpan={3} className="text-center">대여 기록이 없습니다.</TableCell>
+                            <TableCell colSpan={4} className="text-center">대여 기록이 없습니다.</TableCell>
                         </TableRow>
                     )}
                 </TableBody>
