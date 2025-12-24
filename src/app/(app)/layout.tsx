@@ -18,7 +18,7 @@ import { Logo } from '@/components/logo';
 import { mockBooks as initialMockBooks, mockMembers as initialMockMembers } from '@/lib/data';
 import type { Book, Rental, Member } from '@/lib/types';
 import { FirebaseClientProvider, useFirebase, useCollection, useDoc, useMemoFirebase } from '@/firebase';
-import { collection, doc, writeBatch, serverTimestamp, query, where, getDocs, Timestamp } from 'firebase/firestore';
+import { collection, doc, writeBatch, serverTimestamp, query, where, getDocs, Timestamp, getDoc, setDoc } from 'firebase/firestore';
 import { addDocumentNonBlocking, deleteDocumentNonBlocking, setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 
 
@@ -78,43 +78,25 @@ const BooksProvider = ({ children }: { children: ReactNode }) => {
     const { data: members, isLoading: isLoadingMembers } = useCollection<Member>(membersRef);
 
     useEffect(() => {
-        const seedData = async () => {
+        const seedBooks = async () => {
             if (!firestore) return;
 
             const booksSnapshot = await getDocs(query(collection(firestore, 'books')));
             if (booksSnapshot.empty) {
-                console.log("Seeding initial data...");
+                console.log("Seeding initial books data...");
                 const batch = writeBatch(firestore);
                 
-                // Seed Books
                 initialMockBooks.forEach(book => {
                     const bookDocRef = doc(collection(firestore, 'books'));
                     batch.set(bookDocRef, {...book, id: bookDocRef.id});
                 });
-
-                // Seed Members
-                const allMembersToSeed = [
-                    ...initialMockMembers,
-                    { name: '관리자', email: 'root@ipageon.com', role: 'admin' as const }
-                ];
-
-                allMembersToSeed.forEach(member => {
-                    // We use email as ID for simplicity in seeding, but in a real app, you'd use UID.
-                    // This is a simplification for this specific seeding purpose.
-                    // The login logic will correctly use UID.
-                    const memberDocRef = doc(collection(firestore, 'members'), member.email);
-                    batch.set(memberDocRef, {
-                        ...member,
-                        // 'id' field is not needed if document ID is email
-                    });
-                });
                 
                 await batch.commit();
-                console.log("Data seeding complete.");
+                console.log("Book data seeding complete.");
             }
         };
 
-        seedData();
+        seedBooks();
     }, [firestore]);
 
 
@@ -193,40 +175,70 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { user, isUserLoading, firestore } = useFirebase();
   const router = useRouter();
   const [authContext, setAuthContext] = useState<AuthContextType>({ user: null, isVerified: false });
+  const [isDataSyncing, setIsDataSyncing] = useState(true);
 
   const memberDocRef = useMemoFirebase(() => {
-      if (!user || !user.email || !firestore) return null;
-      // Fetch member data using email, as that's our seeded key. In a real app, you might query by UID.
-      return doc(firestore, 'members', user.email);
+      if (!user || !firestore) return null;
+      return doc(firestore, 'members', user.uid);
   }, [user, firestore]);
-  const { data: memberData } = useDoc<Member>(memberDocRef);
+  const { data: memberData, isLoading: isMemberDataLoading } = useDoc<Member>(memberDocRef);
 
   useEffect(() => {
-    if (!isUserLoading) {
-      if (!user) {
-        router.replace('/login');
-      } else if (memberData) {
-        setAuthContext({
-          user: {
-            uid: user.uid,
-            email: user.email || '',
-            role: memberData.role || 'member',
-            name: memberData.name,
-          },
-          isVerified: true,
-        });
-      } else if(user && !memberData) {
-          console.log("Waiting for member data from Firestore...");
-          // This can happen briefly while data loads.
-          // Or if the member doc doesn't exist for some reason.
-      }
-    }
-  }, [user, isUserLoading, router, memberData]);
+    if (isUserLoading) return;
 
-  if (isUserLoading || !authContext.isVerified) {
+    if (!user) {
+      router.replace('/login');
+      setIsDataSyncing(false);
+      return;
+    }
+
+    const syncMemberData = async () => {
+      if (user && firestore && !isMemberDataLoading) {
+        if (!memberData) {
+          // Member data doesn't exist in Firestore, let's create it.
+          const allMockUsers = [...initialMockMembers, { name: '관리자', email: 'root@ipageon.com', role: 'admin' as const }];
+          const mockUser = allMockUsers.find(m => m.email.toLowerCase() === user.email?.toLowerCase());
+
+          if (mockUser) {
+            const newMemberData: Member = {
+              id: user.uid,
+              email: mockUser.email,
+              name: mockUser.name,
+              role: mockUser.role || 'member',
+            };
+            try {
+              await setDoc(doc(firestore, 'members', user.uid), newMemberData);
+              // The useDoc hook will automatically update with the new data.
+            } catch (error) {
+              console.error("Error creating member document:", error);
+            }
+          }
+        }
+        
+        if (memberData) {
+            setAuthContext({
+              user: {
+                uid: user.uid,
+                email: user.email || '',
+                role: memberData.role || 'member',
+                name: memberData.name,
+              },
+              isVerified: true,
+            });
+        }
+        setIsDataSyncing(false);
+      }
+    };
+
+    syncMemberData();
+
+  }, [user, isUserLoading, router, firestore, memberData, isMemberDataLoading]);
+
+  if (isUserLoading || isDataSyncing || !authContext.isVerified) {
     return (
       <div className="flex h-screen items-center justify-center">
         <Loader2 className="h-10 w-10 animate-spin text-primary" />
+        {isDataSyncing && !isUserLoading && <p className="ml-4">사용자 정보를 동기화하는 중입니다...</p>}
       </div>
     );
   }

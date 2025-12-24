@@ -13,10 +13,6 @@ import { useToast } from '@/hooks/use-toast';
 import { Loader2, BookMarked } from 'lucide-react';
 import { useFirebase } from '@/firebase';
 import { signInWithEmailAndPassword, AuthErrorCodes, createUserWithEmailAndPassword } from 'firebase/auth';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
-import { mockMembers } from '@/lib/data';
-import type { Member } from '@/lib/types';
-
 
 const loginSchema = z.object({
   email: z.string().email({ message: '올바른 이메일 주소를 입력해주세요.' }),
@@ -28,16 +24,12 @@ type LoginFormValues = z.infer<typeof loginSchema>;
 export default function LoginPage() {
   const router = useRouter();
   const { toast } = useToast();
-  const [isPageLoading, setIsPageLoading] = useState(true);
-  const { auth, user, isUserLoading, firestore } = useFirebase();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { auth, user, isUserLoading } = useFirebase();
 
   useEffect(() => {
-    if (!isUserLoading) {
-      if (user) {
-        router.replace('/dashboard');
-      } else {
-        setIsPageLoading(false);
-      }
+    if (!isUserLoading && user) {
+      router.replace('/dashboard');
     }
   }, [user, isUserLoading, router]);
 
@@ -50,10 +42,10 @@ export default function LoginPage() {
   });
 
   const onSubmit = async (data: LoginFormValues) => {
-    setIsPageLoading(true);
-    if (!auth || !firestore) {
+    setIsSubmitting(true);
+    if (!auth) {
         toast({ variant: 'destructive', title: '오류', description: 'Firebase가 초기화되지 않았습니다.' });
-        setIsPageLoading(false);
+        setIsSubmitting(false);
         return;
     }
 
@@ -66,41 +58,21 @@ export default function LoginPage() {
         // The useEffect will handle the redirect
     } catch (error: any) {
         if (error.code === AuthErrorCodes.INVALID_CREDENTIAL) {
-            // User does not exist or password incorrect. Try to create a new user if it's one of our mock users.
-            const allMockUsers = [...mockMembers, { name: '관리자', email: 'root@ipageon.com', role: 'admin' as const }];
-            const mockUser = allMockUsers.find(m => m.email.toLowerCase() === data.email.toLowerCase());
-            
-            if (mockUser && data.password === '123456') {
+            // User does not exist, try to create one with the default password.
+            if (data.password === '123456') {
                 try {
-                    const userCredential = await createUserWithEmailAndPassword(auth, data.email, data.password);
-                    const newUser = userCredential.user;
-
-                    // Save member details to Firestore with UID as document ID
-                    const memberDocRef = doc(firestore, 'members', newUser.uid);
-                    const newMemberData: Member = {
-                        id: newUser.uid,
-                        email: mockUser.email,
-                        name: mockUser.name,
-                        role: mockUser.role || 'member',
-                    };
-                    await setDoc(memberDocRef, newMemberData);
-
-                    // Also create a reference by email for the layout to find
-                    const memberByEmailDocRef = doc(firestore, 'members', mockUser.email);
-                    await setDoc(memberByEmailDocRef, newMemberData);
-                    
+                    await createUserWithEmailAndPassword(auth, data.email, data.password);
                     toast({
                       title: '계정 생성 및 로그인 성공',
                       description: `환영합니다, ${data.email}!`,
                     });
-                    // Login successful, redirect is handled by useEffect
+                    // The useEffect will handle the redirect on auth state change
                 } catch (creationError: any) {
-                    toast({
+                     toast({
                         variant: 'destructive',
                         title: '계정 생성 실패',
                         description: '계정을 생성하는 중 오류가 발생했습니다: ' + creationError.message,
                     });
-                    setIsPageLoading(false);
                 }
             } else {
                  toast({
@@ -108,7 +80,6 @@ export default function LoginPage() {
                     title: '로그인 실패',
                     description: '이메일 또는 비밀번호가 올바르지 않습니다.',
                 });
-                setIsPageLoading(false);
             }
         } else {
             toast({
@@ -117,12 +88,13 @@ export default function LoginPage() {
                 description: '알 수 없는 오류가 발생했습니다. 잠시 후 다시 시도해주세요.',
             });
             console.error(error);
-            setIsPageLoading(false);
         }
-    } 
+    } finally {
+        setIsSubmitting(false);
+    }
   };
 
-  if (isUserLoading || user || isPageLoading) {
+  if (isUserLoading || user) {
     return (
       <div className="flex h-screen items-center justify-center">
         <Loader2 className="h-10 w-10 animate-spin text-primary" />
@@ -150,7 +122,7 @@ export default function LoginPage() {
                   <FormItem>
                     <FormLabel>이메일</FormLabel>
                     <FormControl>
-                      <Input placeholder="name@example.com" {...field} />
+                      <Input placeholder="name@example.com" {...field} disabled={isSubmitting}/>
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -163,13 +135,14 @@ export default function LoginPage() {
                   <FormItem>
                     <FormLabel>비밀번호</FormLabel>
                     <FormControl>
-                      <Input type="password" placeholder="••••••••" {...field} />
+                      <Input type="password" placeholder="••••••••" {...field} disabled={isSubmitting}/>
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-              <Button type="submit" className="w-full" disabled={isPageLoading}>
+              <Button type="submit" className="w-full" disabled={isSubmitting}>
+                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 로그인
               </Button>
             </form>
