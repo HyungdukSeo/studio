@@ -34,7 +34,6 @@ export function UserNav() {
   const { user } = useAuth();
   const { toast } = useToast();
   const [isPasswordDialogOpen, setIsPasswordDialogOpen] = useState(false);
-  const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
 
   const handleLogout = () => {
@@ -47,18 +46,6 @@ export function UserNav() {
   const handlePasswordChange = () => {
     if (!user?.email) return;
     
-    const passwordKey = `password_${user.email}`;
-    const storedPassword = localStorage.getItem(passwordKey);
-
-    if (storedPassword !== currentPassword) {
-      toast({
-        variant: 'destructive',
-        title: '오류',
-        description: '현재 비밀번호가 일치하지 않습니다.',
-      });
-      return;
-    }
-    
     if (!newPassword || newPassword.length < 4) {
         toast({
             variant: 'destructive',
@@ -68,13 +55,13 @@ export function UserNav() {
         return;
     }
 
+    const passwordKey = `password_${user.email}`;
     localStorage.setItem(passwordKey, newPassword);
     toast({
       title: '성공',
       description: '비밀번호가 성공적으로 변경되었습니다.',
     });
     setIsPasswordDialogOpen(false);
-    setCurrentPassword('');
     setNewPassword('');
   };
 
@@ -122,22 +109,10 @@ export function UserNav() {
           <DialogHeader>
             <DialogTitle>비밀번호 변경</DialogTitle>
             <DialogDescription>
-              현재 비밀번호와 새 비밀번호를 입력해주세요.
+              새 비밀번호를 입력해주세요.
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="current-password" className="text-right">
-                현재 비밀번호
-              </Label>
-              <Input
-                id="current-password"
-                type="password"
-                value={currentPassword}
-                onChange={(e) => setCurrentPassword(e.target.value)}
-                className="col-span-3"
-              />
-            </div>
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="new-password" className="text-right">
                 새 비밀번호
