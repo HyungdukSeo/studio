@@ -63,30 +63,26 @@ export const mockBooks: Omit<Book, 'id'>[] = newBooks.map((book, i) => {
     };
 });
 
-const newMembers: { name: string; email: string }[] = [
-    { name: '권은주', email: 'ejkwon@ipageon.com' },
-    { name: '김병찬', email: 'bckim@ipageon.com' },
-    { name: '김수아', email: 'sua.kim@ipageon.com' },
-    { name: '박지희', email: 'jhpark@ipageon.com' },
-    { name: '백수연', email: 'suyeon.bae@ipageon.com' },
-    { name: '서형덕', email: 'hyungduk.seo@ipageon.com' },
-    { name: '안정호', email: 'cman@ipageon.com' },
-    { name: '원은경', email: 'ekwon@ipageon.com' },
-    { name: '유신영', email: 'shinyeong.yu@ipageon.com' },
-    { name: '이규혁', email: 'khlee@ipageon.com' },
-    { name: '이상수', email: 'sangsoo.lee@ipageon.com' },
-    { name: '이성인', email: 'silee@ipageon.com' },
-    { name: '이정로', email: 'leejr@ipageon.com' },
-    { name: '장형원', email: 'hyungwon.jang@ipageon.com' },
-    { name: '전승훈', email: 'shjeon@ipageon.com' },
-    { name: '정광희', email: 'ghjeong@ipageon.com' },
-    { name: '차의석', email: 'euisuk.cha@ipageon.com' },
-    { name: '최성호', email: 'shchoi@ipageon.com' },
-    { name: '한상욱', email: 'sangwook.han@ipageon.com' },
-    { name: '한은영', email: 'mshan@ipageon.com' },
+export const initialMockMembers: Omit<Member, 'id'>[] = [
+    { name: '관리자', email: 'root@ipageon.com', role: 'admin' },
+    { name: '권은주', email: 'ejkwon@ipageon.com', role: 'member' },
+    { name: '김병찬', email: 'bckim@ipageon.com', role: 'member' },
+    { name: '김수아', email: 'sua.kim@ipageon.com', role: 'member' },
+    { name: '박지희', email: 'jhpark@ipageon.com', role: 'member' },
+    { name: '백수연', email: 'suyeon.bae@ipageon.com', role: 'member' },
+    { name: '서형덕', email: 'hyungduk.seo@ipageon.com', role: 'member' },
+    { name: '안정호', email: 'cman@ipageon.com', role: 'member' },
+    { name: '원은경', email: 'ekwon@ipageon.com', role: 'member' },
+    { name: '유신영', email: 'shinyeong.yu@ipageon.com', role: 'member' },
+    { name: '이규혁', email: 'khlee@ipageon.com', role: 'member' },
+    { name: '이상수', email: 'sangsoo.lee@ipageon.com', role: 'member' },
+    { name: '이성인', email: 'silee@ipageon.com', role: 'member' },
+    { name: '이정로', email: 'leejr@ipageon.com', role: 'member' },
+    { name: '장형원', email: 'hyungwon.jang@ipageon.com', role: 'member' },
+    { name: '전승훈', email: 'shjeon@ipageon.com', role: 'member' },
+    { name: '정광희', email: 'ghjeong@ipageon.com', role: 'member' },
+    { name: '차의석', email: 'euisuk.cha@ipageon.com', role: 'member' },
+    { name: '최성호', email: 'shchoi@ipageon.com', role: 'member' },
+    { name: '한상욱', email: 'sangwook.han@ipageon.com', role: 'member' },
+    { name: '한은영', email: 'mshan@ipageon.com', role: 'member' },
 ];
-
-export const mockMembers: Omit<Member, 'id'>[] = newMembers.map((member, i) => ({
-    name: member.name,
-    email: member.email,
-}));

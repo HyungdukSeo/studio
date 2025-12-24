@@ -15,7 +15,7 @@ import {
 import { UserNav } from '@/components/user-nav';
 import { MainNav } from '@/components/main-nav';
 import { Logo } from '@/components/logo';
-import { mockBooks as initialMockBooks, mockMembers as initialMockMembers } from '@/lib/data';
+import { initialMockMembers } from '@/lib/data';
 import type { Book, Rental, Member } from '@/lib/types';
 import { FirebaseClientProvider, useFirebase, useCollection, useDoc, useMemoFirebase } from '@/firebase';
 import { collection, doc, writeBatch, serverTimestamp, query, where, getDocs, Timestamp, getDoc, setDoc } from 'firebase/firestore';
@@ -76,31 +76,16 @@ const BooksProvider = ({ children }: { children: ReactNode }) => {
 
     const membersRef = useMemoFirebase(() => firestore ? collection(firestore, 'members') : null, [firestore]);
     const { data: members, isLoading: isLoadingMembers } = useCollection<Member>(membersRef);
+    
+    if (isLoadingBooks || isLoadingRentals || isLoadingMembers) {
+        return (
+          <div className="flex h-screen items-center justify-center">
+            <Loader2 className="h-10 w-10 animate-spin text-primary" />
+          </div>
+        );
+    }
 
-    useEffect(() => {
-        const seedBooks = async () => {
-            if (!firestore) return;
-
-            const booksSnapshot = await getDocs(query(collection(firestore, 'books')));
-            if (booksSnapshot.empty) {
-                console.log("Seeding initial books data...");
-                const batch = writeBatch(firestore);
-                
-                initialMockBooks.forEach(book => {
-                    const bookDocRef = doc(collection(firestore, 'books'));
-                    batch.set(bookDocRef, {...book, id: bookDocRef.id});
-                });
-                
-                await batch.commit();
-                console.log("Book data seeding complete.");
-            }
-        };
-
-        seedBooks();
-    }, [firestore]);
-
-
-    const addBook = useCallback((book: Omit<Book, 'id' | 'imageHint' | 'description' | 'status' | 'reservedBy' | 'dueDate'> & { description?: string, coverImage: string }) => {
+    const addBook = (book: Omit<Book, 'id' | 'imageHint' | 'description' | 'status' | 'reservedBy' | 'dueDate'> & { description?: string, coverImage: string }) => {
         if (!booksRef) return;
         const newBook: Omit<Book, 'id'> = {
             ...book,
@@ -111,30 +96,30 @@ const BooksProvider = ({ children }: { children: ReactNode }) => {
             dueDate: null,
         };
         addDocumentNonBlocking(booksRef, newBook);
-    }, [booksRef]);
+    };
 
-    const updateBook = useCallback((updatedBook: Book) => {
+    const updateBook = (updatedBook: Book) => {
         if (!firestore) return;
         const bookRef = doc(firestore, 'books', updatedBook.id);
         const { id, ...bookData } = updatedBook;
         setDocumentNonBlocking(bookRef, bookData, { merge: true });
-    }, [firestore]);
+    };
 
-    const deleteBook = useCallback((bookId: string) => {
+    const deleteBook = (bookId: string) => {
         if (!firestore) return;
         const bookRef = doc(firestore, 'books', bookId);
         deleteDocumentNonBlocking(bookRef);
-    }, [firestore]);
+    };
 
-    const addRental = useCallback((rental: Omit<Rental, 'id'>) => {
+    const addRental = (rental: Omit<Rental, 'id'>) => {
         if (!rentalsRef) return;
          addDocumentNonBlocking(rentalsRef, {
             ...rental,
             rentalDate: serverTimestamp()
         });
-    }, [rentalsRef]);
+    };
 
-    const endRental = useCallback(async (bookId: string) => {
+    const endRental = async (bookId: string) => {
         if (!firestore) return;
         const q = query(collection(firestore, 'rentals'), where('bookId', '==', bookId), where('returnDate', '==', null));
         const querySnapshot = await getDocs(q);
@@ -145,23 +130,13 @@ const BooksProvider = ({ children }: { children: ReactNode }) => {
             batch.update(rentalRef, { returnDate: serverTimestamp() });
         });
         await batch.commit();
-    }, [firestore]);
+    };
 
-    const rentalsWithDateFix = useMemo(() => {
-        return rentals?.map(r => ({
-            ...r,
-            rentalDate: r.rentalDate && (r.rentalDate as unknown as Timestamp).toDate().toISOString(),
-            returnDate: r.returnDate && (r.returnDate as unknown as Timestamp).toDate().toISOString()
-        })) || [];
-    }, [rentals]);
-    
-    if (isLoadingBooks || isLoadingRentals || isLoadingMembers) {
-        return (
-          <div className="flex h-screen items-center justify-center">
-            <Loader2 className="h-10 w-10 animate-spin text-primary" />
-          </div>
-        );
-    }
+    const rentalsWithDateFix = rentals?.map(r => ({
+        ...r,
+        rentalDate: r.rentalDate && (r.rentalDate as unknown as Timestamp).toDate().toISOString(),
+        returnDate: r.returnDate && (r.returnDate as unknown as Timestamp).toDate().toISOString()
+    })) || [];
 
     return (
         <BooksContext.Provider value={{ books: books || [], addBook, updateBook, deleteBook, rentals: rentalsWithDateFix, addRental, endRental, members: members || [] }}>
@@ -196,8 +171,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       if (user && firestore && !isMemberDataLoading) {
         if (!memberData) {
           // Member data doesn't exist in Firestore, let's create it.
-          const allMockUsers = [...initialMockMembers, { name: '관리자', email: 'root@ipageon.com', role: 'admin' as const }];
-          const mockUser = allMockUsers.find(m => m.email.toLowerCase() === user.email?.toLowerCase());
+          const mockUser = initialMockMembers.find(m => m.email.toLowerCase() === user.email?.toLowerCase());
 
           if (mockUser) {
             const newMemberData: Member = {
