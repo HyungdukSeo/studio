@@ -81,6 +81,14 @@ service cloud.firestore {
     function isExistingResourceOwner() {
       return resource != null && isResourceOwner();
     }
+
+    /**
+     * Checks if the requesting user has an 'admin' role.
+     * It reads the user's own profile from the /members collection.
+     */
+    function isAdmin() {
+      return isSignedIn() && get(/databases/$(database)/documents/members/$(request.auth.uid)).data.role == 'admin';
+    }
     
     /**
      * @description Rules for the 'books' collection.
@@ -94,9 +102,9 @@ service cloud.firestore {
       allow list: if isSignedIn();
       // CRITICAL: Cannot implement owner-only writes. The 'Book' entity is missing an 'ownerId' or 'authorId' field.
       // Writes are disabled until the schema is updated to include a field linking a book to a creator.
-      allow create: if false; // TODO: Add owner validation once the schema is updated with an ownership field.
-      allow update: if false; // TODO: Add owner validation once the schema is updated with an ownership field.
-      allow delete: if false; // TODO: Add owner validation once the schema is updated with an ownership field.
+      allow create: if isAdmin();
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
     }
 
     /**
@@ -107,11 +115,11 @@ service cloud.firestore {
      * @principle Enforces strict ownership. A user can only access the document where the ID matches their own UID.
      */
     match /members/{memberId} {
-      allow get: if isOwner(memberId);
-      allow list: if false; // Prevent user enumeration for privacy.
+      allow get: if isOwner(memberId) || isAdmin();
+      allow list: if isAdmin(); // Allow admins to list all members.
       allow create: if isOwner(memberId) && request.resource.data.id == memberId;
-      allow update: if isExistingOwner(memberId) && request.resource.data.id == resource.data.id;
-      allow delete: if isExistingOwner(memberId);
+      allow update: if isOwner(memberId) && request.resource.data.id == resource.data.id;
+      allow delete: if isAdmin();
     }
 
     /**
@@ -122,11 +130,11 @@ service cloud.firestore {
      * @principle Denormalized Ownership. Access is granted based on the `memberId` field within the document itself.
      */
     match /rentals/{rentalId} {
-      allow get: if isResourceOwner();
+      allow get: if isResourceOwner() || isAdmin();
       allow list: if isSignedIn(); // Allows queries like collection('rentals').where('memberId', '==', auth.uid)
       allow create: if isSignedIn() && request.resource.data.memberId == request.auth.uid;
-      allow update: if isExistingResourceOwner() && request.resource.data.memberId == resource.data.memberId;
-      allow delete: if isExistingResourceOwner();
+      allow update: if isExistingResourceOwner() || isAdmin();
+      allow delete: if isExistingResourceOwner() || isAdmin();
     }
 
     /**
@@ -137,11 +145,11 @@ service cloud.firestore {
      * @principle Denormalized Ownership. Access is granted based on the `memberId` field within the document itself.
      */
     match /logins/{loginId} {
-      allow get: if isResourceOwner();
+      allow get: if isResourceOwner() || isAdmin();
       allow list: if isSignedIn(); // Allows queries for a user's own login records.
       allow create: if isSignedIn() && request.resource.data.memberId == request.auth.uid;
-      allow update: if isExistingResourceOwner() && request.resource.data.memberId == resource.data.memberId;
-      allow delete: if isExistingResourceOwner();
+      allow update: if isExistingResourceOwner() || isAdmin();
+      allow delete: if isExistingResourceOwner() || isAdmin();
     }
   }
 }
