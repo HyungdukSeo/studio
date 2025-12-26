@@ -14,7 +14,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { LogOut, User, Lock, Database } from 'lucide-react';
-import { useAuth, useBooks } from '@/app/(app)/layout';
+import { useAuth } from '@/app/(app)/layout';
 import { useFirebase } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { signOut, updatePassword, reauthenticateWithCredential, EmailAuthProvider } from 'firebase/auth';
@@ -30,12 +30,14 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
+interface UserNavProps {
+  onSeedData: () => void;
+}
 
-export function UserNav() {
+export function UserNav({ onSeedData }: UserNavProps) {
   const router = useRouter();
   const { user } = useAuth();
   const { auth, user: firebaseUser } = useFirebase();
-  const { seedInitialData } = useBooks();
   const { toast } = useToast();
   const [isPasswordDialogOpen, setIsPasswordDialogOpen] = useState(false);
   const [newPassword, setNewPassword] = useState('');
@@ -131,7 +133,7 @@ export function UserNav() {
                 <span>비밀번호 변경</span>
             </DropdownMenuItem>
              {isAdmin && (
-              <DropdownMenuItem onClick={seedInitialData}>
+              <DropdownMenuItem onClick={onSeedData}>
                 <Database className="mr-2 h-4 w-4" />
                 <span>초기 데이터 설정</span>
               </DropdownMenuItem>
