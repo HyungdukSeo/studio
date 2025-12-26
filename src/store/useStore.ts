@@ -24,7 +24,7 @@ export const useStore = create((set, get) => ({
     } catch (e) {
       console.error("Load failed", e);
     }
-  }
+  },
 
   // 스토어의 현재 상태를 서버 파일에 저장
   saveToServer: async () => {
