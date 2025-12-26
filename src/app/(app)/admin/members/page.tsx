@@ -1,5 +1,6 @@
 'use client'
 
+import { useMemo } from 'react';
 import { useBooks, useAuth } from '../../layout';
 import { PageHeader } from '@/components/page-header';
 import { Button } from '@/components/ui/button';
@@ -12,6 +13,8 @@ export default function AdminMembersPage() {
     const isAdmin = user?.role === 'admin';
     const { members } = useBooks();
 
+    const dynamicColumns = useMemo(() => columns({ isAdmin }), [isAdmin]);
+
   return (
     <>
       <PageHeader title="회원 관리">
@@ -23,7 +26,7 @@ export default function AdminMembersPage() {
         )}
       </PageHeader>
       <div className="rounded-lg border shadow-sm">
-        <MembersDataTable columns={columns} data={members} />
+        <MembersDataTable columns={dynamicColumns} data={members} />
       </div>
     </>
   );

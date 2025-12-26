@@ -12,10 +12,12 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import type { Member } from '@/lib/types';
-import { useAuth } from '../../layout';
 
+type ColumnsOptions = {
+  isAdmin: boolean;
+};
 
-export const columns: ColumnDef<Member>[] = [
+export const columns = ({ isAdmin }: ColumnsOptions): ColumnDef<Member>[] => [
   {
     accessorKey: 'name',
     header: '이름',
@@ -28,10 +30,6 @@ export const columns: ColumnDef<Member>[] = [
   {
     id: 'actions',
     cell: function ActionsCell({ row }) {
-      const member = row.original;
-      const { user } = useAuth();
-      const isAdmin = user?.role === 'admin';
-      
       if (!isAdmin) {
         return null;
       }
