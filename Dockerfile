@@ -1,15 +1,7 @@
 # 1. 의존성 설치 (Install dependencies)
 FROM node:20-alpine AS deps
+RUN apk add --no-cache libc6-compat
 WORKDIR /app
-
-# package.json과 lock 파일을 복사합니다.
-#COPY package.json ./
-# npm 대신 다른 패키지 매니저를 사용한다면 아래 줄을 수정하세요.
-# e.g. COPY package.json yarn.lock ./
-# e.g. COPY package.json pnpm-lock.yaml ./
-
-# 의존성을 설치합니다.
-#RUN npm install
 
 COPY package.json package-lock.json ./
 RUN npm ci
@@ -20,27 +12,35 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-# Next.js가 telemetry 데이터를 수집하지 않도록 설정합니다.
-ENV NEXT_TELEMETRY_DISABLED 1
+# 경고 해결: ENV key=value 형식 사용
+ENV NEXT_TELEMETRY_DISABLED=1
 
-# 애플리케이션을 빌드합니다.
 RUN npm run build
 
 # 3. 프로덕션 이미지 (Production image)
 FROM node:20-alpine AS runner
 WORKDIR /app
 
+# 보안 및 권한 설정을 위해 유저 추가
+RUN addgroup --system --gid 1001 nodejs
+RUN adduser --system --uid 1001 nextjs
+
 ENV NODE_ENV=production
-# Next.js가 telemetry 데이터를 수집하지 않도록 설정합니다.
-ENV NEXT_TELEMETRY_DISABLED 1
+ENV NEXT_TELEMETRY_DISABLED=1
 
 # Standalone 모드에서 생성된 파일을 복사합니다.
 COPY --from=builder /app/public ./public
-COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
-COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+COPY --from=builder /app/.next/standalone ./
+COPY --from=builder /app/.next/static ./.next/static
 
-# 기본 포트를 3000으로 설정합니다.
+# [중요] 데이터 저장용 빈 파일 생성 및 권한 부여
+# 빌드 타임에 미리 만들어두어야 나중에 볼륨 마운트 시 권한 충돌이 적습니다.
+RUN touch data.json && chown nextjs:nodejs data.json
+
+USER nextjs
+
 EXPOSE 3000
+ENV PORT=3000
 
 # 서버를 실행합니다.
 CMD ["node", "server.js"]
