@@ -14,7 +14,7 @@ export type Book = {
 };
 
 export type Member = {
-  id: string; // This will be the Firebase Auth UID
+  id: string; 
   name: string;
   email: string;
   role?: 'admin' | 'member';

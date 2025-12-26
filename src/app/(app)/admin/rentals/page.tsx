@@ -35,7 +35,7 @@ export default function AdminRentalsPage() {
             rentalDate: new Date().toISOString(),
             returnDate: null,
             bookTitle: book.title,
-            memberName: member.name
+            memberName: member.name || '알 수 없는 회원'
         });
     }
 

@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -15,9 +14,7 @@ import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { LogOut, User, Lock, Database } from 'lucide-react';
 import { useAuth } from '@/app/(app)/layout';
-import { useFirebase } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
-import { signOut, updatePassword, reauthenticateWithCredential, EmailAuthProvider } from 'firebase/auth';
 import {
   Dialog,
   DialogContent,
@@ -31,78 +28,23 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
 interface UserNavProps {
-  onSeedData: () => void;
+  onLogout: () => void;
 }
 
-export function UserNav({ onSeedData }: UserNavProps) {
-  const router = useRouter();
+export function UserNav({ onLogout }: UserNavProps) {
   const { user } = useAuth();
-  const { auth, user: firebaseUser } = useFirebase();
   const { toast } = useToast();
   const [isPasswordDialogOpen, setIsPasswordDialogOpen] = useState(false);
-  const [newPassword, setNewPassword] = useState('');
-  const [currentPassword, setCurrentPassword] = useState('');
-
-  const handleLogout = async () => {
-    if (!auth) return;
-    await signOut(auth);
-    router.push('/login');
-  };
   
   const handlePasswordChange = async () => {
-    if (!firebaseUser || !firebaseUser.email) {
-        toast({ variant: 'destructive', title: '오류', description: '사용자 정보가 없습니다.' });
-        return;
-    }
-    
-    if (!newPassword || newPassword.length < 6) {
-        toast({
-            variant: 'destructive',
-            title: '오류',
-            description: '새 비밀번호는 6자 이상이어야 합니다.',
-        });
-        return;
-    }
-    
-    if (!currentPassword) {
-      toast({
-          variant: 'destructive',
-          title: '오류',
-          description: '현재 비밀번호를 입력해주세요.',
-      });
-      return;
-    }
-
-    try {
-        const credential = EmailAuthProvider.credential(firebaseUser.email, currentPassword);
-        await reauthenticateWithCredential(firebaseUser, credential);
-        await updatePassword(firebaseUser, newPassword);
-
-        toast({
-            title: '성공',
-            description: '비밀번호가 성공적으로 변경되었습니다.',
-        });
-        setIsPasswordDialogOpen(false);
-        setNewPassword('');
-        setCurrentPassword('');
-    } catch (error: any) {
-        console.error("Password update error:", error);
-        let description = '비밀번호 변경에 실패했습니다. 잠시 후 다시 시도해주세요.';
-        if (error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
-          description = '현재 비밀번호가 올바르지 않습니다.';
-        } else if (error.code === 'auth/too-many-requests') {
-          description = '너무 많은 요청이 있었습니다. 잠시 후 다시 시도해주세요.';
-        }
-        toast({
-            variant: 'destructive',
-            title: '비밀번호 변경 실패',
-            description: description,
-        });
-    }
+    toast({
+        title: '알림',
+        description: '이 기능은 현재 비활성화되어 있습니다.',
+    });
+    setIsPasswordDialogOpen(false);
   };
 
   const userInitial = user?.email ? user.email.charAt(0).toUpperCase() : '?';
-  const isAdmin = user?.role === 'admin';
 
   return (
     <>
@@ -132,15 +74,9 @@ export function UserNav({ onSeedData }: UserNavProps) {
                 <Lock className="mr-2 h-4 w-4" />
                 <span>비밀번호 변경</span>
             </DropdownMenuItem>
-             {isAdmin && (
-              <DropdownMenuItem onClick={onSeedData}>
-                <Database className="mr-2 h-4 w-4" />
-                <span>초기 데이터 설정</span>
-              </DropdownMenuItem>
-            )}
           </DropdownMenuGroup>
           <DropdownMenuSeparator />
-          <DropdownMenuItem onClick={handleLogout}>
+          <DropdownMenuItem onClick={onLogout}>
             <LogOut className="mr-2 h-4 w-4" />
             <span>로그아웃</span>
           </DropdownMenuItem>
@@ -152,43 +88,13 @@ export function UserNav({ onSeedData }: UserNavProps) {
           <DialogHeader>
             <DialogTitle>비밀번호 변경</DialogTitle>
             <DialogDescription>
-              보안을 위해 현재 비밀번호와 새 비밀번호를 입력해주세요.
+              현재 버전에서는 비밀번호를 변경할 수 없습니다.
             </DialogDescription>
           </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="current-password" className="text-right">
-                현재 비밀번호
-              </Label>
-              <Input
-                id="current-password"
-                type="password"
-                value={currentPassword}
-                onChange={(e) => setCurrentPassword(e.target.value)}
-                className="col-span-3"
-              />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="new-password" className="text-right">
-                새 비밀번호
-              </Label>
-              <Input
-                id="new-password"
-                type="password"
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                className="col-span-3"
-              />
-            </div>
-          </div>
           <DialogFooter>
             <DialogClose asChild>
-                <Button type="button" variant="secondary" onClick={() => {
-                  setCurrentPassword('');
-                  setNewPassword('');
-                }}>취소</Button>
+                <Button type="button" variant="secondary">닫기</Button>
             </DialogClose>
-            <Button type="button" onClick={handlePasswordChange}>저장</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
