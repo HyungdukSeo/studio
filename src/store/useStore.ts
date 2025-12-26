@@ -26,6 +26,7 @@ interface LibraryState {
   processReturn: (rentalId: string, bookId: string) => void;
   extendRental: (rentalId: string, days: number) => void;
 }
+
 export const useStore = create<LibraryState>()((set, get) => ({
   books: [],
   members: [],
@@ -37,13 +38,15 @@ export const useStore = create<LibraryState>()((set, get) => ({
   loadData: async () => {
     try {
       const res = await axios.get('/api/data');
-      set({
-        books: res.data.books || [],
-        members: res.data.members || [],
-        rentals: res.data.rentals || [],
-        nodes: res.data.nodes || [],
-        edges: res.data.edges || []
-      });
+      if (res.data) {
+        set({
+          books: res.data.books || [],
+          members: res.data.members || [],
+          rentals: res.data.rentals || [],
+          nodes: res.data.nodes || [],
+          edges: res.data.edges || []
+        });
+      }
     } catch (e) {
       console.error("데이터 로드 실패:", e);
     }
@@ -70,14 +73,17 @@ export const useStore = create<LibraryState>()((set, get) => ({
     set((state) => ({
       books: state.books.map((b) => (b.id === bookId ? { ...b, status } : b)),
     }));
-    get().saveData();
+    // 안전한 함수 호출 방식
+    const save = get().saveData;
+    if (typeof save === 'function') save();
   },
 
   updateBookInfo: (bookId, updates) => {
     set((state) => ({
       books: state.books.map((b) => (b.id === bookId ? { ...b, ...updates } : b)),
     }));
-    get().saveData();
+    const save = get().saveData;
+    if (typeof save === 'function') save();
   },
 
   // 4. 멤버 정보 및 비밀번호 변경
@@ -87,12 +93,14 @@ export const useStore = create<LibraryState>()((set, get) => ({
         m.id === memberId ? { ...m, password: newPassword } : m
       ),
     }));
-    get().saveData();
+    const save = get().saveData;
+    if (typeof save === 'function') save();
   },
 
   addMember: (member) => {
     set((state) => ({ members: [...state.members, member] }));
-    get().saveData();
+    const save = get().saveData;
+    if (typeof save === 'function') save();
   },
 
   // 5. 대여 처리 (대여 기록 생성 + 도서 상태 변경)
@@ -104,7 +112,7 @@ export const useStore = create<LibraryState>()((set, get) => ({
       memberName,
       bookTitle,
       rentalDate: new Date(),
-      returnDate: null, // 아직 반납 안됨
+      returnDate: null,
     };
 
     set((state) => ({
@@ -113,7 +121,8 @@ export const useStore = create<LibraryState>()((set, get) => ({
         b.id === bookId ? { ...b, status: 'borrowed' } : b
       ),
     }));
-    get().saveData();
+    const save = get().saveData;
+    if (typeof save === 'function') save();
   },
 
   // 6. 반납 처리 (반납일 기록 + 도서 상태 변경)
@@ -126,7 +135,8 @@ export const useStore = create<LibraryState>()((set, get) => ({
         b.id === bookId ? { ...b, status: 'available' } : b
       ),
     }));
-    get().saveData();
+    const save = get().saveData;
+    if (typeof save === 'function') save();
   },
 
   // 7. 대여일 연장 (기존 대여일 정보 수정)
@@ -141,6 +151,7 @@ export const useStore = create<LibraryState>()((set, get) => ({
         return r;
       }),
     }));
-    get().saveData();
+    const save = get().saveData;
+    if (typeof save === 'function') save();
   }
 }));
