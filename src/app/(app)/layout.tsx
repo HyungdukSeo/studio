@@ -19,7 +19,6 @@ import { mockBooks, initialMockMembers } from '@/lib/data';
 import type { Book, Rental, Member } from '@/lib/types';
 import { useFirebase, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, doc, writeBatch, serverTimestamp, query, where, getDocs, Timestamp, getDoc, setDoc } from 'firebase/firestore';
-import { addDocumentNonBlocking, deleteDocumentNonBlocking, setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { useToast } from '@/hooks/use-toast';
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
 
@@ -80,25 +79,25 @@ const AppProvider = ({ children, user }: { children: ReactNode, user: AppContext
             reservedBy: null,
             dueDate: null,
         };
-        addDocumentNonBlocking(booksRef, newBook);
+        addDoc(booksRef, newBook);
     };
 
     const updateBook = (updatedBook: Book) => {
         if (!firestore) return;
         const bookRef = doc(firestore, 'books', updatedBook.id);
         const { id, ...bookData } = updatedBook;
-        setDocumentNonBlocking(bookRef, bookData, { merge: true });
+        setDoc(bookRef, bookData, { merge: true });
     };
 
     const deleteBook = (bookId: string) => {
         if (!firestore) return;
         const bookRef = doc(firestore, 'books', bookId);
-        deleteDocumentNonBlocking(bookRef);
+        deleteDoc(bookRef);
     };
 
     const addRental = (rental: Omit<Rental, 'id'>) => {
         if (!rentalsRef) return;
-         addDocumentNonBlocking(rentalsRef, {
+        addDoc(rentalsRef, {
             ...rental,
             rentalDate: serverTimestamp()
         });
@@ -146,24 +145,9 @@ const AppProvider = ({ children, user }: { children: ReactNode, user: AppContext
                 toast({ variant: 'destructive', title: '오류', description: '데이터를 생성하려면 먼저 로그인해야 합니다.' });
                 return;
             }
-            const currentUserEmail = currentUser.email;
-            const currentUserPassword = prompt('데이터 생성을 위해 현재 관리자 계정의 비밀번호를 입력해주세요.');
-
-            if (!currentUserPassword) {
-                toast({ variant: 'destructive', title: '취소됨', description: '비밀번호 입력이 취소되었습니다.' });
-                return;
-            }
-
+            
             for (const member of initialMockMembers) {
                 try {
-                    if (member.email === currentUserEmail) {
-                        const memberRef = doc(firestore, 'members', currentUser.uid);
-                        if (!(await getDoc(memberRef)).exists()) {
-                           batch.set(memberRef, { ...member, id: currentUser.uid });
-                        }
-                        continue;
-                    }
-
                     const userCredential = await createUserWithEmailAndPassword(auth, member.email, '123456');
                     const newUser = userCredential.user;
 
@@ -173,6 +157,16 @@ const AppProvider = ({ children, user }: { children: ReactNode, user: AppContext
                 } catch (error: any) {
                     if (error.code === 'auth/email-already-in-use') {
                         console.log(`Member ${member.email} already exists in Auth. Skipping Auth creation.`);
+                        
+                        const q = query(collection(firestore, 'members'), where('email', '==', member.email));
+                        const querySnapshot = await getDocs(q);
+                        if (querySnapshot.empty) {
+                           // This case is unlikely if auth user exists, but as a safeguard
+                           // We need a UID to proceed. We can't get it without login.
+                           // For now, we will just log this. A better solution might be needed.
+                           console.error(`Auth user ${member.email} exists, but no Firestore member doc found. Manual intervention might be needed.`);
+                        }
+
                     } else {
                         console.error(`Failed to create member ${member.email}:`, error);
                         toast({ variant: 'destructive', title: '오류', description: `${member.email} 계정 생성에 실패했습니다: ${error.message}` });
@@ -180,8 +174,6 @@ const AppProvider = ({ children, user }: { children: ReactNode, user: AppContext
                 }
             }
             
-            await signInWithEmailAndPassword(auth, currentUserEmail, currentUserPassword);
-
             batch.set(lockRef, { completedAt: serverTimestamp() });
             
             await batch.commit();
@@ -232,12 +224,12 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       if (!firestore || !firebaseUser.email) return;
 
       try {
-          const memberDocRef = doc(firestore, 'members', firebaseUser.uid);
-          let memberDocSnap = await getDoc(memberDocRef);
+          const q = query(collection(firestore, "members"), where("email", "==", firebaseUser.email));
+          const querySnapshot = await getDocs(q);
 
           let finalMemberData: Member;
 
-          if (!memberDocSnap.exists()) {
+          if (querySnapshot.empty) {
               const mockUser = initialMockMembers.find(m => m.email.toLowerCase() === firebaseUser.email!.toLowerCase());
               
               const newMemberData: Member = {
@@ -247,11 +239,11 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                   role: mockUser?.role || 'member',
               };
 
-              await setDoc(memberDocRef, newMemberData);
+              await setDoc(doc(firestore, 'members', firebaseUser.uid), newMemberData);
               finalMemberData = newMemberData;
               toast({ title: '환영합니다!', description: `프로필 정보가 생성되었습니다.` });
           } else {
-              finalMemberData = memberDocSnap.data() as Member;
+              finalMemberData = querySnapshot.docs[0].data() as Member;
           }
 
           setAuthInfo({
@@ -279,19 +271,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     return (
       <div className="flex h-screen items-center justify-center">
         <Loader2 className="h-10 w-10 animate-spin text-primary" />
-        {!isUserLoading && !authInfo && <p className="ml-4">사용자 정보를 동기화하는 중입니다...</p>}
+        <p className="ml-4">사용자 정보를 확인하는 중입니다...</p>
       </div>
     );
-  }
-  
-  if (!authInfo.isVerified) {
-      // This state can be used to show a specific error UI if needed
-      return (
-          <div className="flex h-screen items-center justify-center">
-               <Loader2 className="h-10 w-10 animate-spin text-primary" />
-               <p className="ml-4">인증 정보를 확인 중입니다...</p>
-          </div>
-      );
   }
 
   return (
