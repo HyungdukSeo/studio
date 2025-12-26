@@ -21,26 +21,22 @@ RUN npm run build
 FROM node:20-alpine AS runner
 WORKDIR /app
 
-# 보안 및 권한 설정을 위해 유저 추가
-RUN addgroup --system --gid 1001 nodejs
-RUN adduser --system --uid 1001 nextjs
-
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 
-# Standalone 모드에서 생성된 파일을 복사합니다.
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
 
-# [중요] 데이터 저장용 빈 파일 생성 및 권한 부여
-# 빌드 타임에 미리 만들어두어야 나중에 볼륨 마운트 시 권한 충돌이 적습니다.
-RUN touch data.json && chown nextjs:nodejs data.json
+# [핵심] 데이터 전용 폴더 생성 및 권한 부여
+# 이 /app/data 폴더를 시놀로지의 실제 폴더와 연결할 것입니다.
+RUN mkdir -p /app/data && chmod 777 /app/data
+RUN mkdir -p /app/.next/cache && chmod 777 /app/.next/cache
 
-USER nextjs
+# root 권한으로 실행 (시놀로지 권한 충돌 방지)
+# USER nextjs 
 
 EXPOSE 3000
 ENV PORT=3000
 
-# 서버를 실행합니다.
 CMD ["node", "server.js"]
