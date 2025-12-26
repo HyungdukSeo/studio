@@ -4,24 +4,23 @@ import { useEffect, useRef } from 'react';
 import { useStore } from '@/store/useStore';
 
 export default function SyncManager() {
-  // 스토어의 새로운 함수 이름(loadData, saveData)으로 매핑
   const loadData = useStore((state) => state.loadData);
   const saveData = useStore((state) => state.saveData);
   const nodes = useStore((state) => state.nodes);
   const edges = useStore((state) => state.edges);
 
-  // 무한 루프 방지를 위한 최초 로드 여부 체크
   const isInitialMount = useRef(true);
 
-  // 1. 서버에서 데이터 가져오기 (이름 변경: loadFromServer -> loadData)
+  // 1. 읽기 최적화: 주기를 30초로 대폭 늘리고, 포커스 시에만 갱신 시도
   useEffect(() => {
     if (typeof loadData === 'function') {
-      loadData();
+      loadData(); // 최초 1회 실행
     }
-    
-    // 30초마다 갱신 (3초는 서버 부하가 클 수 있어 30초로 권장하지만, 필요시 유지 가능)
+
+    // 3초는 너무 빠릅니다. 30초~1분 정도가 적당합니다.
     const interval = setInterval(() => {
-      if (typeof loadData === 'function') {
+      // 브라우저 탭이 활성화되어 있을 때만 서버에서 데이터를 가져옴
+      if (document.visibilityState === 'visible' && typeof loadData === 'function') {
         loadData();
       }
     }, 30000); 
@@ -29,21 +28,23 @@ export default function SyncManager() {
     return () => clearInterval(interval);
   }, [loadData]);
 
-  // 2. 서버에 데이터 저장 (이름 변경: saveToServer -> saveData)
+  // 2. 쓰기 최적화 (디바운스): 입력이 멈추고 1.5초 후에 한 번만 저장
   useEffect(() => {
-    // 최초 앱 로드 시점에 빈 상태를 서버에 덮어쓰는 것을 방지
     if (isInitialMount.current) {
       isInitialMount.current = false;
       return;
     }
 
-    if (typeof saveData === 'function') {
+    // 데이터가 있을 때만 저장 실행
+    if (typeof saveData === 'function' && (nodes.length > 0 || edges.length > 0)) {
       const timeout = setTimeout(() => {
+        console.log("자동 저장 실행 중...");
         saveData();
-      }, 1000); // 디바운스 시간을 1초로 늘려 안정성 확보
+      }, 1500); // 1.5초 디바운스 (서버 부하 감소)
+      
       return () => clearTimeout(timeout);
     }
   }, [nodes, edges, saveData]);
 
-  return null;
+  return null; 
 }
