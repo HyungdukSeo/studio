@@ -2,7 +2,7 @@ name: Build Docker image and upload tar
 
 on:
   push:
-    branches: ["main"]
+    branches: ["feature/server-json-db"]
   workflow_dispatch:
 
 jobs:
