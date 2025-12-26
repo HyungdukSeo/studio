@@ -3,21 +3,13 @@
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, createContext, useContext, useCallback, ReactNode, useMemo } from 'react';
 import { Loader2 } from 'lucide-react';
-import {
-  SidebarProvider,
-  Sidebar,
-  SidebarHeader,
-  SidebarContent,
-  SidebarFooter,
-  SidebarTrigger,
-  SidebarInset,
-} from '@/components/ui/sidebar';
+import { SidebarProvider, Sidebar, SidebarHeader, SidebarContent, SidebarFooter, SidebarTrigger, SidebarInset } from '@/components/ui/sidebar';
 import { UserNav } from '@/components/user-nav';
 import { MainNav } from '@/components/main-nav';
 import { Logo } from '@/components/logo';
 import { mockBooks, initialMockMembers } from '@/lib/data';
 import type { Book, Rental, Member } from '@/lib/types';
-import { useFirebase, useCollection, useMemoFirebase } from '@/firebase';
+import { useFirebase, useCollection, useMemoFirebase, errorEmitter, FirestorePermissionError } from '@/firebase';
 import { collection, doc, writeBatch, serverTimestamp, query, where, getDocs, Timestamp, getDoc, setDoc, addDoc, deleteDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
@@ -39,7 +31,6 @@ interface AppContextType {
   addRental: (rental: Omit<Rental, 'id'>) => void;
   endRental: (bookId: string) => void;
   members: Member[];
-  seedInitialData: () => Promise<void>;
 }
 
 const AppContext = createContext<AppContextType | null>(null);
@@ -71,7 +62,7 @@ const AppProvider = ({ children, user }: { children: ReactNode, user: AppContext
 
     const addBook = useCallback((book: Omit<Book, 'id' | 'imageHint' | 'description' | 'status' | 'reservedBy' | 'dueDate'> & { description?: string, coverImage: string }) => {
         if (!booksRef) return;
-        const newBook: Omit<Book, 'id'> = {
+        const newBookData: Omit<Book, 'id'> = {
             ...book,
             status: 'available',
             imageHint: 'book cover',
@@ -79,108 +70,93 @@ const AppProvider = ({ children, user }: { children: ReactNode, user: AppContext
             reservedBy: null,
             dueDate: null,
         };
-        addDoc(booksRef, newBook);
+        addDoc(booksRef, newBookData)
+          .catch(error => {
+            errorEmitter.emit(
+              'permission-error',
+              new FirestorePermissionError({
+                path: booksRef.path,
+                operation: 'create',
+                requestResourceData: newBookData,
+              })
+            );
+          });
     }, [booksRef]);
 
     const updateBook = useCallback((updatedBook: Book) => {
         if (!firestore) return;
         const bookRef = doc(firestore, 'books', updatedBook.id);
         const { id, ...bookData } = updatedBook;
-        setDoc(bookRef, bookData, { merge: true });
+        setDoc(bookRef, bookData, { merge: true })
+          .catch(error => {
+            errorEmitter.emit(
+              'permission-error',
+              new FirestorePermissionError({
+                path: bookRef.path,
+                operation: 'update',
+                requestResourceData: bookData,
+              })
+            );
+          });
     }, [firestore]);
 
     const deleteBook = useCallback((bookId: string) => {
         if (!firestore) return;
         const bookRef = doc(firestore, 'books', bookId);
-        deleteDoc(bookRef);
+        deleteDoc(bookRef)
+          .catch(error => {
+            errorEmitter.emit(
+              'permission-error',
+              new FirestorePermissionError({
+                path: bookRef.path,
+                operation: 'delete',
+              })
+            );
+          });
     }, [firestore]);
 
     const addRental = useCallback((rental: Omit<Rental, 'id'>) => {
         if (!rentalsRef) return;
-        addDoc(rentalsRef, {
+        const rentalData = {
             ...rental,
             rentalDate: serverTimestamp()
-        });
+        };
+        addDoc(rentalsRef, rentalData)
+          .catch(error => {
+            errorEmitter.emit(
+              'permission-error',
+              new FirestorePermissionError({
+                path: rentalsRef.path,
+                operation: 'create',
+                requestResourceData: rentalData,
+              })
+            );
+          });
     }, [rentalsRef]);
 
     const endRental = useCallback(async (bookId: string) => {
         if (!firestore) return;
         const q = query(collection(firestore, 'rentals'), where('bookId', '==', bookId), where('returnDate', '==', null));
-        const querySnapshot = await getDocs(q);
         
-        const batch = writeBatch(firestore);
-        querySnapshot.forEach((document) => {
-            const rentalRef = doc(firestore, 'rentals', document.id);
-            batch.update(rentalRef, { returnDate: serverTimestamp() });
-        });
-        await batch.commit();
-    }, [firestore]);
-    
-    const seedInitialData = async () => {
-        if (!firestore || !auth) {
-            toast({ variant: 'destructive', title: '오류', description: 'Firebase가 준비되지 않았습니다.' });
-            return;
-        }
-
-        const lockRef = doc(firestore, 'internal/locks/seeding');
         try {
-            const lockSnap = await getDoc(lockRef);
-            if (lockSnap.exists()) {
-                toast({ title: '안내', description: '초기 데이터가 이미 설정되어 있습니다.' });
-                return;
-            }
-
-            toast({ title: '초기 데이터 설정 시작', description: '도서 및 회원 정보를 데이터베이스에 생성합니다. 잠시 기다려주세요...' });
-
+            const querySnapshot = await getDocs(q);
             const batch = writeBatch(firestore);
-
-            // Seed Books
-            const booksCollectionRef = collection(firestore, 'books');
-            mockBooks.forEach(book => {
-                const bookRef = doc(booksCollectionRef);
-                batch.set(bookRef, book);
+            querySnapshot.forEach((document) => {
+                const rentalRef = doc(firestore, 'rentals', document.id);
+                batch.update(rentalRef, { returnDate: serverTimestamp() });
             });
-
-            // Seed Members
-            for (const member of initialMockMembers) {
-                try {
-                    // This can only be run once per user email.
-                    const userCredential = await createUserWithEmailAndPassword(auth, member.email, '123456');
-                    const newUser = userCredential.user;
-
-                    const memberRef = doc(firestore, 'members', newUser.uid);
-                    batch.set(memberRef, { ...member, id: newUser.uid });
-
-                } catch (error: any) {
-                    if (error.code === 'auth/email-already-in-use') {
-                        console.log(`Auth user ${member.email} already exists. Skipping auth creation, but will check/add Firestore doc.`);
-                        const q = query(collection(firestore, "members"), where("email", "==", member.email));
-                        const querySnapshot = await getDocs(q);
-                        if(querySnapshot.empty) {
-                           // This state is tricky. Auth user exists but no member doc.
-                           // For this seeding purpose, we can't get UID without login.
-                           // The login flow should handle creating the member doc if it's missing.
-                           console.warn(`Auth user ${member.email} exists, but no member doc. It should be created on their first login.`);
-                        }
-                    } else {
-                        console.error(`Failed to create member ${member.email}:`, error);
-                        toast({ variant: 'destructive', title: '오류', description: `${member.email} 계정 생성에 실패했습니다: ${error.message}` });
-                    }
-                }
-            }
-            
-            // Set the lock
-            batch.set(lockRef, { completedAt: serverTimestamp() });
-            
             await batch.commit();
-            toast({ title: '초기 데이터 설정 완료', description: '모든 도서와 회원 정보가 성공적으로 생성되었습니다.' });
-
-        } catch (error: any) {
-            console.error("Error seeding initial data:", error);
-            toast({ variant: 'destructive', title: '데이터 생성 오류', description: `초기 데이터 설정 중 문제가 발생했습니다: ${error.message}` });
+        } catch (error) {
+            errorEmitter.emit(
+              'permission-error',
+              new FirestorePermissionError({
+                path: 'rentals', // path is dynamic, so we use collection id
+                operation: 'update',
+                requestResourceData: { bookId: bookId, returnDate: 'now' },
+              })
+            );
         }
-    };
-
+    }, [firestore]);
 
     if (isLoadingBooks || isLoadingRentals || isLoadingMembers) {
         return (
@@ -197,15 +173,14 @@ const AppProvider = ({ children, user }: { children: ReactNode, user: AppContext
     })) || [];
 
     return (
-        <AppContext.Provider value={{ user, books: books || [], addBook, updateBook, deleteBook, rentals: rentalsWithDateFix, addRental, endRental, members: members || [], seedInitialData }}>
+        <AppContext.Provider value={{ user, books: books || [], addBook, updateBook, deleteBook, rentals: rentalsWithDateFix, addRental, endRental, members: members || [] }}>
             {children}
         </AppContext.Provider>
     );
 };
 
-
 export default function AppLayout({ children }: { children: React.ReactNode }) {
-  const { user: firebaseUser, isUserLoading, firestore } = useFirebase();
+  const { user: firebaseUser, isUserLoading, firestore, auth } = useFirebase();
   const router = useRouter();
   const { toast } = useToast();
   const [authInfo, setAuthInfo] = useState<{ user: AppContextType['user'], isVerified: boolean } | null>(null);
@@ -237,7 +212,16 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                   role: mockUser?.role || 'member',
               };
 
-              await setDoc(doc(firestore, 'members', firebaseUser.uid), newMemberData);
+              const memberRef = doc(firestore, 'members', firebaseUser.uid);
+              await setDoc(memberRef, newMemberData)
+                .catch(err => {
+                    errorEmitter.emit('permission-error', new FirestorePermissionError({
+                        path: memberRef.path,
+                        operation: 'create',
+                        requestResourceData: newMemberData,
+                    }));
+                });
+
               finalMemberData = newMemberData;
               toast({ title: '환영합니다!', description: `프로필 정보가 생성되었습니다.` });
           } else {
@@ -256,6 +240,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
       } catch (error) {
           console.error("Error syncing user data:", error);
+           errorEmitter.emit('permission-error', new FirestorePermissionError({
+                path: 'members',
+                operation: 'list',
+            }));
           toast({ variant: 'destructive', title: '오류', description: '사용자 정보 동기화에 실패했습니다.' });
           setAuthInfo({ user: null, isVerified: false });
       }
@@ -264,6 +252,65 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     syncAndVerifyUser();
 
   }, [firebaseUser, isUserLoading, router, firestore, toast]);
+
+
+    useEffect(() => {
+    const seedInitialData = async () => {
+        if (!firestore || !auth) return;
+
+        const lockRef = doc(firestore, 'internal/locks/seeding');
+        try {
+            const lockSnap = await getDoc(lockRef);
+            if (lockSnap.exists()) {
+                return;
+            }
+
+            toast({ title: '초기 데이터 설정 시작', description: '도서 및 회원 정보를 생성합니다...' });
+
+            const batch = writeBatch(firestore);
+            
+            const booksCollectionRef = collection(firestore, 'books');
+            mockBooks.forEach(book => {
+                const bookRef = doc(booksCollectionRef);
+                batch.set(bookRef, book);
+            });
+
+            for (const member of initialMockMembers) {
+                try {
+                    const userCredential = await createUserWithEmailAndPassword(auth, member.email, '123456');
+                    const newUser = userCredential.user;
+                    const memberRef = doc(firestore, 'members', newUser.uid);
+                    batch.set(memberRef, { ...member, id: newUser.uid });
+                } catch (error: any) {
+                    if (error.code === 'auth/email-already-in-use') {
+                        console.log(`사용자 ${member.email}는 이미 존재합니다. Firestore 문서만 확인/추가합니다.`);
+                        const q = query(collection(firestore, "members"), where("email", "==", member.email));
+                        const querySnapshot = await getDocs(q);
+                        if(querySnapshot.empty) {
+                           console.warn(`인증된 사용자 ${member.email}는 존재하지만, member 문서가 없습니다.`);
+                        }
+                    } else {
+                        console.error(`${member.email} 계정 생성 실패:`, error);
+                    }
+                }
+            }
+            
+            batch.set(lockRef, { completedAt: serverTimestamp() });
+            
+            await batch.commit();
+            toast({ title: '초기 데이터 설정 완료', description: '모든 정보가 성공적으로 생성되었습니다.' });
+        } catch (error: any) {
+            errorEmitter.emit('permission-error', new FirestorePermissionError({
+                path: 'batch-write',
+                operation: 'write',
+                requestResourceData: { info: 'seedInitialData' },
+            }));
+        }
+    };
+    if(authInfo?.user?.role === 'admin' && firestore) {
+      seedInitialData();
+    }
+  }, [authInfo, firestore, auth, toast]);
 
   if (isUserLoading || !authInfo) {
     return (
@@ -285,32 +332,32 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <AppProvider user={authInfo.user}>
-        <SidebarProvider>
-          <Sidebar>
-            <SidebarHeader>
-              <Logo />
-            </SidebarHeader>
-            <SidebarContent>
-              <MainNav />
-            </SidebarContent>
-            <SidebarFooter>
-              {/* You can add footer content here */}
-            </SidebarFooter>
-          </Sidebar>
-          <SidebarInset>
-            <header className="flex h-14 items-center justify-between border-b bg-card px-4 lg:px-6">
-              <div className="md:hidden">
-                <SidebarTrigger />
-              </div>
-              <div className="flex w-full items-center justify-end">
-                <UserNav />
-              </div>
-            </header>
-            <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">
-              {children}
-            </main>
-          </SidebarInset>
-        </SidebarProvider>
+      <SidebarProvider>
+        <Sidebar>
+          <SidebarHeader>
+            <Logo />
+          </SidebarHeader>
+          <SidebarContent>
+            <MainNav />
+          </SidebarContent>
+          <SidebarFooter>
+            {/* You can add footer content here */}
+          </SidebarFooter>
+        </Sidebar>
+        <SidebarInset>
+          <header className="flex h-14 items-center justify-between border-b bg-card px-4 lg:px-6">
+            <div className="md:hidden">
+              <SidebarTrigger />
+            </div>
+            <div className="flex w-full items-center justify-end">
+              <UserNav />
+            </div>
+          </header>
+          <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">
+            {children}
+          </main>
+        </SidebarInset>
+      </SidebarProvider>
     </AppProvider>
   );
 }
