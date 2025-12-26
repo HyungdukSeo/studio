@@ -56,7 +56,17 @@ const AppProvider = ({ children, user }: { children: ReactNode, user: AppContext
     const rentalsRef = useMemoFirebase(() => firestore ? collection(firestore, 'rentals') : null, [firestore]);
     const { data: rentals, isLoading: isLoadingRentals } = useCollection<Rental>(rentalsRef);
 
-    const membersRef = useMemoFirebase(() => firestore ? collection(firestore, 'members') : null, [firestore]);
+    const membersRef = useMemoFirebase(() => {
+      if (!firestore || !user) return null;
+      if (user.role === 'admin') {
+        return collection(firestore, 'members');
+      }
+      // For non-admin users, we might not need to fetch all members.
+      // Depending on the feature, we could fetch only their own doc, or nothing.
+      // For now, let's return null for non-admins to avoid permission errors on `list`.
+      // The admin can still see all members.
+      return null;
+    }, [firestore, user]);
     const { data: members, isLoading: isLoadingMembers } = useCollection<Member>(membersRef);
     
     const addBook = useCallback((book: Omit<Book, 'id' | 'imageHint' | 'description' | 'status' | 'reservedBy' | 'dueDate'> & { description?: string, coverImage: string }) => {
@@ -179,9 +189,12 @@ const AppProvider = ({ children, user }: { children: ReactNode, user: AppContext
         rentalDate: r.rentalDate && (r.rentalDate as unknown as Timestamp).toDate().toISOString(),
         returnDate: r.returnDate && (r.returnDate as unknown as Timestamp).toDate().toISOString()
     })) || [];
+    
+    // If members data is null (for non-admins), use the initial mock data as a fallback for UI consistency
+    const finalMembers = members || initialMockMembers;
 
     return (
-        <AppContext.Provider value={{ user, books: books || [], addBook, updateBook, deleteBook, rentals: rentalsWithDateFix, addRental, endRental, members: members || [] }}>
+        <AppContext.Provider value={{ user, books: books || [], addBook, updateBook, deleteBook, rentals: rentalsWithDateFix, addRental, endRental, members: finalMembers }}>
             {children}
         </AppContext.Provider>
     );
@@ -205,55 +218,56 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       if (!firestore || !firebaseUser.email) return;
 
       try {
-          const q = query(collection(firestore, "members"), where("email", "==", firebaseUser.email));
-          const querySnapshot = await getDocs(q);
+        const memberRef = doc(firestore, 'members', firebaseUser.uid);
+        const docSnap = await getDoc(memberRef);
 
-          let finalMemberData: Member;
+        let finalMemberData: Member;
 
-          if (querySnapshot.empty) {
-              const mockUser = initialMockMembers.find(m => m.email.toLowerCase() === firebaseUser.email!.toLowerCase());
-              
-              const newMemberData: Member = {
-                  id: firebaseUser.uid,
-                  email: firebaseUser.email!,
-                  name: mockUser?.name || firebaseUser.email!.split('@')[0],
-                  role: mockUser?.role || 'member',
-              };
+        if (!docSnap.exists()) {
+          const mockUser = initialMockMembers.find(m => m.email.toLowerCase() === firebaseUser.email!.toLowerCase());
+          
+          const newMemberData: Member = {
+            id: firebaseUser.uid,
+            email: firebaseUser.email!,
+            name: mockUser?.name || firebaseUser.email!.split('@')[0],
+            role: mockUser?.role || 'member',
+          };
 
-              const memberRef = doc(firestore, 'members', firebaseUser.uid);
-              await setDoc(memberRef, newMemberData)
-                .catch(err => {
-                    errorEmitter.emit('permission-error', new FirestorePermissionError({
-                        path: memberRef.path,
-                        operation: 'create',
-                        requestResourceData: newMemberData,
-                    }));
-                });
-
-              finalMemberData = newMemberData;
-              toast({ title: '환영합니다!', description: `프로필 정보가 생성되었습니다.` });
-          } else {
-              finalMemberData = querySnapshot.docs[0].data() as Member;
-          }
-
-          setAuthInfo({
-              user: {
-                  uid: firebaseUser.uid,
-                  email: finalMemberData.email,
-                  role: finalMemberData.role || 'member',
-                  name: finalMemberData.name,
-              },
-              isVerified: true,
+          await setDoc(memberRef, newMemberData).catch(err => {
+            errorEmitter.emit('permission-error', new FirestorePermissionError({
+              path: memberRef.path,
+              operation: 'create',
+              requestResourceData: newMemberData,
+            }));
+            throw err; // Re-throw to be caught by the outer catch block
           });
+          finalMemberData = newMemberData;
+          toast({ title: '환영합니다!', description: `프로필 정보가 생성되었습니다.` });
+        } else {
+          finalMemberData = docSnap.data() as Member;
+        }
+
+        setAuthInfo({
+          user: {
+            uid: firebaseUser.uid,
+            email: finalMemberData.email,
+            role: finalMemberData.role || 'member',
+            name: finalMemberData.name,
+          },
+          isVerified: true,
+        });
 
       } catch (error) {
-          console.error("Error syncing user data:", error);
-           errorEmitter.emit('permission-error', new FirestorePermissionError({
-                path: 'members',
-                operation: 'list',
-            }));
-          toast({ variant: 'destructive', title: '오류', description: '사용자 정보 동기화에 실패했습니다.' });
-          setAuthInfo({ user: null, isVerified: false });
+        console.error("Error syncing user data:", error);
+        // The error is already specific if it's a FirestorePermissionError
+        if (!(error instanceof FirestorePermissionError)) {
+          errorEmitter.emit('permission-error', new FirestorePermissionError({
+            path: `members/${firebaseUser.uid}`,
+            operation: 'get',
+          }));
+        }
+        toast({ variant: 'destructive', title: '오류', description: '사용자 정보 동기화에 실패했습니다.' });
+        setAuthInfo({ user: null, isVerified: false });
       }
     };
     
@@ -304,13 +318,21 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         
         batch.set(lockRef, { completedAt: serverTimestamp() });
         
-        await batch.commit();
+        await batch.commit()
+          .catch(error => {
+              errorEmitter.emit('permission-error', new FirestorePermissionError({
+                path: 'batch-write',
+                operation: 'write',
+                requestResourceData: { info: 'seedInitialData-commit' },
+              }));
+          });
+
         toast({ title: '초기 데이터 설정 완료', description: '모든 정보가 성공적으로 생성되었습니다.' });
     } catch (error: any) {
         errorEmitter.emit('permission-error', new FirestorePermissionError({
             path: 'batch-write',
             operation: 'write',
-            requestResourceData: { info: 'seedInitialData' },
+            requestResourceData: { info: 'seedInitialData-outer' },
         }));
     }
   }, [firestore, auth, toast]);
@@ -370,3 +392,5 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     </AppProvider>
   );
 }
+
+    
