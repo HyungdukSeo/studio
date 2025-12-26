@@ -1,35 +1,38 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
-import { useStore } from '@/store/useStore'; // Zustand 스토어 임포트
+import { useStore } from '@/store/useStore';
 
 export default function HomePage() {
   const router = useRouter();
-  const loadData = useStore((state) => state.loadData); // 서버 데이터를 로드하는 액션
+  
+  // 스토어에서 loadData 함수만 선택적으로 가져옵니다.
+  const loadData = useStore((state) => state.loadData);
 
-  useEffect(() => {
-    // 1. 앱 진입 시 서버(data.json)로부터 최신 데이터를 불러옵니다.
-    const initializeApp = async () => {
+  const initializeApp = useCallback(async () => {
+    // loadData가 존재하고 함수인지 확실히 체크
+    if (typeof loadData === 'function') {
       try {
         await loadData();
-        console.log("초기 데이터 로드 완료");
+        console.log("초기 데이터 로드 성공");
       } catch (error) {
-        console.error("초기 데이터 로드 중 오류 발생:", error);
+        console.error("데이터 로드 중 에러:", error);
       }
+    }
 
-      // 2. 데이터 로드 후 로그인 상태에 따라 페이지 이동
-      const token = localStorage.getItem('auth_token');
-      if (token) {
-        router.replace('/dashboard');
-      } else {
-        router.replace('/login');
-      }
-    };
+    const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
+    if (token) {
+      router.replace('/dashboard');
+    } else {
+      router.replace('/login');
+    }
+  }, [loadData, router]);
 
+  useEffect(() => {
     initializeApp();
-  }, [router, loadData]);
+  }, [initializeApp]);
 
   return (
     <div className="flex h-screen w-full items-center justify-center bg-background">

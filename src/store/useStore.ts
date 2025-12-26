@@ -26,8 +26,7 @@ interface LibraryState {
   processReturn: (rentalId: string, bookId: string) => void;
   extendRental: (rentalId: string, days: number) => void;
 }
-
-export const useStore = create<LibraryState>((set, get) => ({
+export const useStore = create<LibraryState>()((set, get) => ({
   books: [],
   members: [],
   rentals: [],
