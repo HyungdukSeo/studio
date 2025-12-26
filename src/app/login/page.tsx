@@ -55,19 +55,42 @@ export default function LoginPage() {
         title: '로그인 성공',
         description: `환영합니다, ${data.email}!`,
       });
-      // On successful login, the useEffect will redirect to /dashboard
+      // Successful login will trigger the useEffect to redirect.
     } catch (error) {
       const authError = error as AuthError;
-      let description = '알 수 없는 오류가 발생했습니다.';
-      if (authError.code === 'auth/invalid-credential' || authError.code === 'auth/user-not-found' || authError.code === 'auth/wrong-password') {
-        description = '이메일 또는 비밀번호가 잘못되었습니다.';
+      
+      // If user is not found, try to create a new user.
+      if (authError.code === 'auth/user-not-found' || authError.code === 'auth/invalid-credential') {
+        try {
+          await createUserWithEmailAndPassword(auth, data.email, data.password);
+          toast({
+            title: "계정 생성 완료",
+            description: "계정이 성공적으로 생성되었습니다. 다시 로그인해주세요.",
+          });
+        } catch (creationError) {
+          const creationAuthError = creationError as AuthError;
+          let description = '계정 생성 중 알 수 없는 오류가 발생했습니다.';
+          if (creationAuthError.code === 'auth/email-already-in-use') {
+            description = '이미 사용 중인 이메일입니다. 비밀번호를 확인해주세요.';
+          } else if (creationAuthError.code === 'auth/weak-password') {
+            description = '비밀번호는 6자 이상이어야 합니다.'
+          }
+          toast({
+            variant: 'destructive',
+            title: '계정 생성 실패',
+            description: description,
+          });
+          console.error("User creation error:", creationAuthError);
+        }
+      } else {
+        // Handle other sign-in errors
+        toast({
+          variant: 'destructive',
+          title: '로그인 오류',
+          description: '알 수 없는 오류가 발생했습니다. 잠시 후 다시 시도해주세요.',
+        });
+        console.error("Login error:", authError);
       }
-      toast({
-        variant: 'destructive',
-        title: '로그인 오류',
-        description: description,
-      });
-      console.error("Login error:", authError);
     } finally {
       setIsSubmitting(false);
     }
