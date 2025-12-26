@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { Toaster } from "@/components/ui/toaster"
+import SyncManager from '@/components/SyncManager'; // SyncManager 임포트
 import './globals.css';
 
 export const metadata: Metadata = {
@@ -20,6 +21,9 @@ export default function RootLayout({
         <link href="https://fonts.googleapis.com/css2?family=Alegreya:wght@400;500;700&display=swap" rel="stylesheet" />
       </head>
       <body className="font-body antialiased">
+        {/* SyncManager가 배경에서 실시간으로 서버와 데이터를 주고받습니다 */}
+        <SyncManager />
+        
         {children}
         <Toaster />
       </body>
