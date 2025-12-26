@@ -18,9 +18,9 @@ import { Logo } from '@/components/logo';
 import { mockBooks, initialMockMembers } from '@/lib/data';
 import type { Book, Rental, Member } from '@/lib/types';
 import { useFirebase, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, doc, writeBatch, serverTimestamp, query, where, getDocs, Timestamp, getDoc, setDoc } from 'firebase/firestore';
+import { collection, doc, writeBatch, serverTimestamp, query, where, getDocs, Timestamp, getDoc, setDoc, addDoc, deleteDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
-import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
+import { createUserWithEmailAndPassword } from 'firebase/auth';
 
 type UserRole = 'admin' | 'member';
 
@@ -69,7 +69,7 @@ const AppProvider = ({ children, user }: { children: ReactNode, user: AppContext
     const membersRef = useMemoFirebase(() => firestore ? collection(firestore, 'members') : null, [firestore]);
     const { data: members, isLoading: isLoadingMembers } = useCollection<Member>(membersRef);
 
-    const addBook = (book: Omit<Book, 'id' | 'imageHint' | 'description' | 'status' | 'reservedBy' | 'dueDate'> & { description?: string, coverImage: string }) => {
+    const addBook = useCallback((book: Omit<Book, 'id' | 'imageHint' | 'description' | 'status' | 'reservedBy' | 'dueDate'> & { description?: string, coverImage: string }) => {
         if (!booksRef) return;
         const newBook: Omit<Book, 'id'> = {
             ...book,
@@ -80,30 +80,30 @@ const AppProvider = ({ children, user }: { children: ReactNode, user: AppContext
             dueDate: null,
         };
         addDoc(booksRef, newBook);
-    };
+    }, [booksRef]);
 
-    const updateBook = (updatedBook: Book) => {
+    const updateBook = useCallback((updatedBook: Book) => {
         if (!firestore) return;
         const bookRef = doc(firestore, 'books', updatedBook.id);
         const { id, ...bookData } = updatedBook;
         setDoc(bookRef, bookData, { merge: true });
-    };
+    }, [firestore]);
 
-    const deleteBook = (bookId: string) => {
+    const deleteBook = useCallback((bookId: string) => {
         if (!firestore) return;
         const bookRef = doc(firestore, 'books', bookId);
         deleteDoc(bookRef);
-    };
+    }, [firestore]);
 
-    const addRental = (rental: Omit<Rental, 'id'>) => {
+    const addRental = useCallback((rental: Omit<Rental, 'id'>) => {
         if (!rentalsRef) return;
         addDoc(rentalsRef, {
             ...rental,
             rentalDate: serverTimestamp()
         });
-    };
+    }, [rentalsRef]);
 
-    const endRental = async (bookId: string) => {
+    const endRental = useCallback(async (bookId: string) => {
         if (!firestore) return;
         const q = query(collection(firestore, 'rentals'), where('bookId', '==', bookId), where('returnDate', '==', null));
         const querySnapshot = await getDocs(q);
@@ -114,14 +114,14 @@ const AppProvider = ({ children, user }: { children: ReactNode, user: AppContext
             batch.update(rentalRef, { returnDate: serverTimestamp() });
         });
         await batch.commit();
-    };
-
+    }, [firestore]);
+    
     const seedInitialData = async () => {
         if (!firestore || !auth) {
             toast({ variant: 'destructive', title: '오류', description: 'Firebase가 준비되지 않았습니다.' });
             return;
         }
-    
+
         const lockRef = doc(firestore, 'internal/locks/seeding');
         try {
             const lockSnap = await getDoc(lockRef);
@@ -129,25 +129,22 @@ const AppProvider = ({ children, user }: { children: ReactNode, user: AppContext
                 toast({ title: '안내', description: '초기 데이터가 이미 설정되어 있습니다.' });
                 return;
             }
-    
+
             toast({ title: '초기 데이터 설정 시작', description: '도서 및 회원 정보를 데이터베이스에 생성합니다. 잠시 기다려주세요...' });
-    
+
             const batch = writeBatch(firestore);
-    
+
+            // Seed Books
             const booksCollectionRef = collection(firestore, 'books');
             mockBooks.forEach(book => {
                 const bookRef = doc(booksCollectionRef);
                 batch.set(bookRef, book);
             });
-    
-            const currentUser = auth.currentUser;
-            if (!currentUser || !currentUser.email) {
-                toast({ variant: 'destructive', title: '오류', description: '데이터를 생성하려면 먼저 로그인해야 합니다.' });
-                return;
-            }
-            
+
+            // Seed Members
             for (const member of initialMockMembers) {
                 try {
+                    // This can only be run once per user email.
                     const userCredential = await createUserWithEmailAndPassword(auth, member.email, '123456');
                     const newUser = userCredential.user;
 
@@ -156,17 +153,15 @@ const AppProvider = ({ children, user }: { children: ReactNode, user: AppContext
 
                 } catch (error: any) {
                     if (error.code === 'auth/email-already-in-use') {
-                        console.log(`Member ${member.email} already exists in Auth. Skipping Auth creation.`);
-                        
-                        const q = query(collection(firestore, 'members'), where('email', '==', member.email));
+                        console.log(`Auth user ${member.email} already exists. Skipping auth creation, but will check/add Firestore doc.`);
+                        const q = query(collection(firestore, "members"), where("email", "==", member.email));
                         const querySnapshot = await getDocs(q);
-                        if (querySnapshot.empty) {
-                           // This case is unlikely if auth user exists, but as a safeguard
-                           // We need a UID to proceed. We can't get it without login.
-                           // For now, we will just log this. A better solution might be needed.
-                           console.error(`Auth user ${member.email} exists, but no Firestore member doc found. Manual intervention might be needed.`);
+                        if(querySnapshot.empty) {
+                           // This state is tricky. Auth user exists but no member doc.
+                           // For this seeding purpose, we can't get UID without login.
+                           // The login flow should handle creating the member doc if it's missing.
+                           console.warn(`Auth user ${member.email} exists, but no member doc. It should be created on their first login.`);
                         }
-
                     } else {
                         console.error(`Failed to create member ${member.email}:`, error);
                         toast({ variant: 'destructive', title: '오류', description: `${member.email} 계정 생성에 실패했습니다: ${error.message}` });
@@ -174,16 +169,18 @@ const AppProvider = ({ children, user }: { children: ReactNode, user: AppContext
                 }
             }
             
+            // Set the lock
             batch.set(lockRef, { completedAt: serverTimestamp() });
             
             await batch.commit();
             toast({ title: '초기 데이터 설정 완료', description: '모든 도서와 회원 정보가 성공적으로 생성되었습니다.' });
-    
+
         } catch (error: any) {
             console.error("Error seeding initial data:", error);
             toast({ variant: 'destructive', title: '데이터 생성 오류', description: `초기 데이터 설정 중 문제가 발생했습니다: ${error.message}` });
         }
     };
+
 
     if (isLoadingBooks || isLoadingRentals || isLoadingMembers) {
         return (
@@ -205,6 +202,7 @@ const AppProvider = ({ children, user }: { children: ReactNode, user: AppContext
         </AppContext.Provider>
     );
 };
+
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { user: firebaseUser, isUserLoading, firestore } = useFirebase();
@@ -272,6 +270,15 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       <div className="flex h-screen items-center justify-center">
         <Loader2 className="h-10 w-10 animate-spin text-primary" />
         <p className="ml-4">사용자 정보를 확인하는 중입니다...</p>
+      </div>
+    );
+  }
+  
+  if (!authInfo.isVerified) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <Loader2 className="h-10 w-10 animate-spin text-destructive" />
+        <p className="ml-4">사용자 정보를 확인하는데 실패했습니다. 다시 로그인해주세요.</p>
       </div>
     );
   }
