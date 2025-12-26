@@ -5,7 +5,7 @@ const newBooks: {title: string, author: string, category: string, coverImage?: s
     { title: '퇴사인류 보고서', author: '김퇴사', category: '에세이', coverImage: 'https://shopping-phinf.pstatic.net/main_4962228/49622282624.20240829071754.jpg' },
     { title: '다빈치 코드 1', author: '댄 브라운', category: '소설', coverImage: 'https://shopping-phinf.pstatic.net/main_3250503/32505030640.20231028091729.jpg' },
     { title: '다빈치 코드 2', author: '댄 브라운', category: '소설', coverImage: 'https://shopping-phinf.pstatic.net/main_3247604/32476049694.20230815080541.jpg' },
-    { title: '마흔에 읽는 쇼펜 하우어', author: '강용수', category: '서양철학', coverImage: 'https://shopping-phinf.pstatic.net/main_4230559/42305597619.20230919071755.jpg' },
+    { title: '마흔에 읽는 쇼펜 하우어', author: '강용수', category: '서양철학', coverImage: 'https://shopping-phinf.pstatic.net/main_4230559/42305597619.20250717092755.jpg' },
     { title: '호의에 대하여', author: '문형배', category: '에세이' , coverImage: 'https://shopping-phinf.pstatic.net/main_5642221/56422215313.20250827071544.jpg' },
     { title: '설민석의 삼국지 1', author: '설민석', category: '중국철학', coverImage: 'https://shopping-phinf.pstatic.net/main_3245546/32455467972.20230725120104.jpg' },
     { title: '설민석의 삼국지 2', author: '설민석', category: '중국철학', coverImage: 'https://shopping-phinf.pstatic.net/main_3246389/32463895681.20240104070838.jpg' },
@@ -56,10 +56,11 @@ export const mockBooks: Omit<Book, 'id'>[] = newBooks.map((book, i) => {
         author: book.author,
         category: book.category,
         description: `"${book.title}"은(는) ${book.author} 작가의 ${book.category} 장르 책입니다.`,
-        coverImage: book.coverImage || `http://books.google.com/books/content?id=t1gtvQAACAAJ&printsec=frontcover&img=1&zoom=1&source=gbs_api`,
+        coverImage: book.coverImage || `https://picsum.photos/seed/${i + 1}/400/600`,
         imageHint: 'book cover',
         status: 'available',
         reservedBy: null,
+        dueDate: null,
     };
 });
 
