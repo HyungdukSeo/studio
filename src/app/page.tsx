@@ -8,6 +8,7 @@ export default function HomePage() {
   const router = useRouter();
 
   useEffect(() => {
+    // Redirect logic based on localStorage
     const storedUser = localStorage.getItem('bookbridge-user');
     if (storedUser) {
       router.replace('/dashboard');

@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useEffect, useState, createContext, useContext, useCallback, ReactNode, useMemo } from 'react';
+import { useEffect, useState, createContext, useContext, useCallback, ReactNode } from 'react';
 import { Loader2 } from 'lucide-react';
 import { SidebarProvider, Sidebar, SidebarHeader, SidebarContent, SidebarFooter, SidebarTrigger, SidebarInset } from '@/components/ui/sidebar';
 import { UserNav } from '@/components/user-nav';
@@ -9,7 +9,6 @@ import { MainNav } from '@/components/main-nav';
 import { Logo } from '@/components/logo';
 import { mockBooks, initialMockMembers } from '@/lib/data';
 import type { Book, Rental, Member } from '@/lib/types';
-import { useToast } from '@/hooks/use-toast';
 
 type UserRole = 'admin' | 'member';
 
@@ -44,55 +43,108 @@ export function useBooks() {
 }
 
 const AppProvider = ({ children, user }: { children: ReactNode; user: AppContextType['user'] }) => {
-    const [books, setBooks] = useState<Book[]>(() =>
-        mockBooks.map((book, index) => ({ ...book, id: `book-${index + 1}`}))
-    );
-    const [members, setMembers] = useState<Member[]>(() => 
-        initialMockMembers.map((member, index) => ({ ...member, id: `member-${index + 1}` }))
-    );
+    const [books, setBooks] = useState<Book[]>([]);
+    const [members, setMembers] = useState<Member[]>([]);
     const [rentals, setRentals] = useState<Rental[]>([]);
+
+    useEffect(() => {
+        try {
+            const storedBooks = localStorage.getItem('bookbridge-books');
+            const storedMembers = localStorage.getItem('bookbridge-members');
+            const storedRentals = localStorage.getItem('bookbridge-rentals');
+
+            if (storedBooks) {
+                setBooks(JSON.parse(storedBooks));
+            } else {
+                const initialBooks = mockBooks.map((book, index) => ({ ...book, id: `book-${index + 1}`}));
+                setBooks(initialBooks);
+                localStorage.setItem('bookbridge-books', JSON.stringify(initialBooks));
+            }
+
+            if (storedMembers) {
+                setMembers(JSON.parse(storedMembers));
+            } else {
+                const initialMembers = initialMockMembers.map((member, index) => ({ ...member, id: `member-${index + 1}` }));
+                setMembers(initialMembers);
+                localStorage.setItem('bookbridge-members', JSON.stringify(initialMembers));
+            }
+
+            if (storedRentals) {
+                setRentals(JSON.parse(storedRentals));
+            } else {
+                setRentals([]);
+                localStorage.setItem('bookbridge-rentals', JSON.stringify([]));
+            }
+        } catch (error) {
+            console.error("Failed to load data from localStorage", error);
+            // Fallback to initial data if localStorage fails
+            const initialBooks = mockBooks.map((book, index) => ({ ...book, id: `book-${index + 1}`}));
+            setBooks(initialBooks);
+            const initialMembers = initialMockMembers.map((member, index) => ({ ...member, id: `member-${index + 1}` }));
+            setMembers(initialMembers);
+            setRentals([]);
+        }
+    }, []);
+
+    const saveData = <T,>(key: string, data: T) => {
+        localStorage.setItem(key, JSON.stringify(data));
+    };
 
     const addBook = useCallback((book: Omit<Book, 'id' | 'imageHint' | 'description' | 'status' | 'reservedBy' | 'dueDate'> & { description?: string, coverImage: string }) => {
         setBooks(prev => {
             const newBook: Book = {
                 ...book,
-                id: `book-${prev.length + 1}`,
+                id: `book-${Date.now()}`,
                 status: 'available',
                 imageHint: 'book cover',
                 description: book.description || `"${book.title}"은(는) ${book.author} 작가의 ${book.category} 장르 책입니다.`,
                 reservedBy: null,
                 dueDate: null,
             };
-            return [...prev, newBook];
+            const updatedBooks = [...prev, newBook];
+            saveData('bookbridge-books', updatedBooks);
+            return updatedBooks;
         });
     }, []);
 
     const updateBook = useCallback((updatedBook: Book) => {
-        setBooks(prev => prev.map(book => book.id === updatedBook.id ? updatedBook : book));
+        setBooks(prev => {
+            const updatedBooks = prev.map(book => book.id === updatedBook.id ? updatedBook : book);
+            saveData('bookbridge-books', updatedBooks);
+            return updatedBooks;
+        });
     }, []);
 
     const deleteBook = useCallback((bookId: string) => {
-        setBooks(prev => prev.filter(book => book.id !== bookId));
+        setBooks(prev => {
+            const updatedBooks = prev.filter(book => book.id !== bookId);
+            saveData('bookbridge-books', updatedBooks);
+            return updatedBooks;
+        });
     }, []);
 
     const addRental = useCallback((rental: Omit<Rental, 'id'>) => {
         setRentals(prev => {
             const newRental: Rental = {
                 ...rental,
-                id: `rental-${prev.length + 1}`,
+                id: `rental-${Date.now()}`,
             };
-            return [...prev, newRental];
+            const updatedRentals = [...prev, newRental];
+            saveData('bookbridge-rentals', updatedRentals);
+            return updatedRentals;
         });
     }, []);
     
     const endRental = useCallback((bookId: string) => {
-        setRentals(prev => 
-            prev.map(rental => 
+        setRentals(prev => {
+            const updatedRentals = prev.map(rental => 
                 rental.bookId === bookId && !rental.returnDate
                 ? { ...rental, returnDate: new Date().toISOString() }
                 : rental
-            )
-        );
+            );
+            saveData('bookbridge-rentals', updatedRentals);
+            return updatedRentals;
+        });
     }, []);
 
     return (
@@ -132,7 +184,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     }
 
     if (!user) {
-        return null;
+        return null; // or a redirect, but handled by useEffect
     }
 
     return (

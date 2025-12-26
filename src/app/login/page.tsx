@@ -26,6 +26,7 @@ export default function LoginPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
+    // This effect handles redirecting if the user is already logged in.
     const storedUser = localStorage.getItem('bookbridge-user');
     if (storedUser) {
       router.replace('/dashboard');
@@ -43,9 +44,12 @@ export default function LoginPage() {
   const onSubmit = async (data: LoginFormValues) => {
     setIsSubmitting(true);
     
+    // Simulate network delay
+    await new Promise(resolve => setTimeout(resolve, 500));
+
     const foundUser = initialMockMembers.find(member => member.email.toLowerCase() === data.email.toLowerCase());
     
-    // For this local-only version, we'll accept a fixed password.
+    // For this local-only version, we'll accept a fixed password for any registered user.
     if (foundUser && data.password === '123456') {
       const userToStore = {
         email: foundUser.email,
